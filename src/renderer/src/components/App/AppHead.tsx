@@ -65,8 +65,7 @@ import { useSnackBar, AlertSeverity } from '../../hoc/SnackBar';
 import PolicyDialog from '../PolicyDialog';
 import { mainSelector, sharedSelector, viewModeSelector } from '../../selector';
 import { useHome } from '../../utils/useHome';
-import { DESKTEAM, isHomeRoute } from '../../utils/routePaths';
-// import { isMobileWidth } from '../../utils/routePaths';
+import { isHomeRoute } from '../../utils/routePaths';
 import { useOrbitData } from '../../hoc/useOrbitData';
 import packageJson from '../../../package.json';
 import { MainAPI } from '@model/main-api';
@@ -376,7 +375,7 @@ export const AppHead = (props: IProps) => {
       e.returnValue = '';
       return true;
     }
-    if (localStorage.getItem(localUserKey(LocalKey.url)) === DESKTEAM) {
+    if (localStorage.getItem(localUserKey(LocalKey.url)) === '/team') {
       localStorage.setItem(localUserKey(LocalKey.url), '/');
     }
     return undefined;
