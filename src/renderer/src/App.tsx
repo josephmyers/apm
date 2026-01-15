@@ -34,6 +34,17 @@ function App(): React.JSX.Element {
               textTransform: 'capitalize',
             },
           },
+          components: {
+            MuiButton: {
+              styleOverrides: {
+                root: {
+                  borderColor: '#d1d5db',
+                  borderWidth: 1,
+                  boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.14)',
+                },
+              },
+            },
+          },
         },
         getDataGridLocale(lang)
       ),
