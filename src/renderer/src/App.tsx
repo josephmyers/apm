@@ -24,6 +24,9 @@ function App(): React.JSX.Element {
             secondary: {
               main: '#00A7E1', //Original: 00A7E1, Better color: 25CBB8
             },
+            neutral: {
+              main: '#000000',
+            },
             // Custom colors - simple key-value pairs
             custom: {
               currentRegion: 'rgb(102, 255, 0, .5)',

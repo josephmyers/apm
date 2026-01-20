@@ -28,6 +28,7 @@ import { BurritoContents } from './BurritoContents';
 import { BurritoWrapper } from './BurritoWrapper';
 import SwitchTeams from './SwitchTeams';
 import WorkQAPrep from './WorkQAPrep';
+import NewPage from './NewPage';
 
 const routes = createRoutesFromElements([
   <Route key="error" errorElement={<ErrorPage />}>
@@ -111,6 +112,11 @@ const routes = createRoutesFromElements([
       key="prototype-prep"
       path="/detail/:prjId/:pasId/communitytestprep"
       element={<Auth el={<WorkQAPrep />} />}
+    />
+    <Route
+      key="new-page"
+      path="/newpage/:prjId/:pasId"
+      element={<Auth el={<NewPage />} />}
     />
     <Route key="welcome" path="/" element={<Welcome />} />
     <Route key="catchall" path="*" element={<Team />} />

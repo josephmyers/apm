@@ -8,6 +8,11 @@ import { checkMicrophonePermission } from './checkMicrophonePermission';
 
 const localString = { addToDict: 'Add to dictionary' };
 
+if (!app.isPackaged) {
+  app.commandLine.appendSwitch('remote-debugging-port', '9222')
+  app.commandLine.appendSwitch('remote-allow-origins', 'http://localhost:9222')
+}
+
 export function createWindow(): void {
   const existingWindows = BrowserWindow.getAllWindows();
 
