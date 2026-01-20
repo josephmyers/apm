@@ -85,7 +85,7 @@ globs: **/*
 2. **IPC**: Add/reuse IPC channels. Keep namespacing consistent.
 3. **Types**: Update central types module if adding IPC.
 4. **Tests**: Add tests for new logic, ONLY when requested.
-5. **Verification**: Always perform end-to-end manual verification using the browser_subagent for any UI changes before requesting user review. Do not rely solely on static analysis or type checks.
+5. **Verification**: Check if the Electron app is already running (`npm start` in repo root). If so, use it for verification by utilizing the `electron-dev` MCP tools (e.g., `mcp_electron-dev_get_ui_tree`, `mcp_electron-dev_click_element`). Do NOT launch a web browser if the Electron app is running.
 
 ## 9. Security (Electron)
 

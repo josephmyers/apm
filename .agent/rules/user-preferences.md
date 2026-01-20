@@ -19,6 +19,8 @@ globs: **/*
 - Look for opportunites to simplify code and reduce duplication and waste. But do not make those changes without approval. Simply recommend them.
 - **Direct Answers**: Answer questions directly before taking actions.
 - **Auto-Login**: If forced to authenticate in browser, look for `.env` or ask. Do not commit credentials.
+- **Verification Platform**: If the Electron app is running (`npm start` in repo root), ALWAYS use it for verification. NEVER launch a browser if Electron is already active.
+
 
 ## Usage Policy
 - **Update this file**: You MAY update this file to record clarified preferences or workflow agreements.
