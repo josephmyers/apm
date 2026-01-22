@@ -41,11 +41,52 @@ function App(): React.JSX.Element {
             MuiButton: {
               styleOverrides: {
                 root: {
-                  borderColor: '#d1d5db',
-                  borderWidth: 1,
-                  boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.14)',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  boxShadow: '1px 1px 3px rgba(0, 0, 0, 0.12)',
+                  fontSize: '1rem',
+                  color: 'black',
+                  background: '#f0f0f0',
+                  '&:hover': {
+                    background: '#e2e2e2ff',
+                  },
                 },
               },
+              variants: [
+                {
+                  props: { variant: 'primary' },
+                  style: {
+                    background: '#333',
+                    color: '#fff',
+                    '&:hover': {
+                      background: '#555',
+                    },
+                    '&:disabled': {
+                      background: '#e0e0e0',
+                      color: '#999',
+                    },
+                  },
+                },
+                {
+                  props: { variant: 'floating' },
+                  style: {
+                    position: 'absolute',
+                    right: 24,
+                    bottom: 24,
+                    width: 56,
+                    height: 56,
+                    minWidth: 56,
+                    padding: 0,
+                    border: '1px solid',
+                    borderColor: '#e0e0e0',
+                    backgroundColor: '#ffffff',
+                    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+                    '&:hover': {
+                      backgroundColor: '#f5f5f5',
+                    },
+                  },
+                },
+              ],
             },
           },
         },

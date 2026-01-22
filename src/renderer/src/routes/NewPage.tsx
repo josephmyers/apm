@@ -9,7 +9,6 @@ import {
   Paper,
   Stack,
   useTheme,
-  LinearProgress,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
@@ -36,7 +35,10 @@ const NewPageContent = () => {
   const regionsRef = useRef<RegionsPlugin | null>(null);
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
-  const [selection, setSelection] = React.useState<{ start: number; end: number } | null>(null);
+  const [selection, setSelection] = React.useState<{
+    start: number;
+    end: number;
+  } | null>(null);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -78,15 +80,15 @@ const NewPageContent = () => {
     });
 
     const handleMouseUp = () => {
-        const regions = wsRegions.getRegions();
-        if (regions.length > 0) {
-            ws.setTime(regions[0].start);
-        }
+      const regions = wsRegions.getRegions();
+      if (regions.length > 0) {
+        ws.setTime(regions[0].start);
+      }
     };
 
     const container = containerRef.current;
     if (container) {
-        container.addEventListener('mouseup', handleMouseUp);
+      container.addEventListener('mouseup', handleMouseUp);
     }
 
     wsRegions.on('region-clicked', (region, e) => {
@@ -98,18 +100,18 @@ const NewPageContent = () => {
     ws.on('timeupdate', (time) => setCurrentTime(time));
     ws.on('decode', (d) => setDuration(d));
     ws.on('finish', () => {
-        if (state.setPlaying) state.setPlaying(false);
+      if (state.setPlaying) state.setPlaying(false);
     });
 
     // Click outside clears selection
     ws.on('click', () => {
-        wsRegions.clearRegions();
-        setSelection(null);
+      wsRegions.clearRegions();
+      setSelection(null);
     });
 
     return () => {
       if (container) {
-          container.removeEventListener('mouseup', handleMouseUp);
+        container.removeEventListener('mouseup', handleMouseUp);
       }
       ws.destroy();
       wavesurferRef.current = null;
@@ -119,9 +121,9 @@ const NewPageContent = () => {
   // Sync audio blob with WaveSurfer
   useEffect(() => {
     if (state.audioBlob && wavesurferRef.current) {
-        const url = URL.createObjectURL(state.audioBlob);
-        wavesurferRef.current.load(url);
-        return () => URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(state.audioBlob);
+      wavesurferRef.current.load(url);
+      return () => URL.revokeObjectURL(url);
     }
     return undefined;
   }, [state.audioBlob]);
@@ -131,11 +133,11 @@ const NewPageContent = () => {
   useEffect(() => {
     const ws = wavesurferRef.current;
     if (ws) {
-        if (state.playing) {
-            ws.play();
-        } else {
-            ws.pause();
-        }
+      if (state.playing) {
+        ws.play();
+      } else {
+        ws.pause();
+      }
     }
   }, [state.playing]);
 
@@ -144,7 +146,6 @@ const NewPageContent = () => {
       state.setPlaying(!state.playing);
     }
   };
-
 
   // Logic to get passage info from context
   const bookCode = state.passage?.attributes?.book || '';
@@ -185,11 +186,18 @@ const NewPageContent = () => {
           sx={{ px: 2 }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <IconButton onClick={() => navigate('/team')} aria-label="back" sx={{ width: 40, height: 40 }}>
+            <IconButton
+              onClick={() => navigate('/team')}
+              aria-label="back"
+              sx={{ width: 40, height: 40 }}
+            >
               <ArrowBackIcon sx={{ fontSize: 32 }} />
             </IconButton>
             <Box>
-              <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 700, lineHeight: 1.2 }}>
+              <Typography
+                variant="h6"
+                sx={{ fontSize: '1rem', fontWeight: 700, lineHeight: 1.2 }}
+              >
                 {title}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -218,7 +226,7 @@ const NewPageContent = () => {
                 transform: 'skewX(-20deg)',
                 borderRight: '2px solid white',
                 '&:first-of-type': { borderLeft: 'none' },
-                mx: 0.2
+                mx: 0.2,
               }}
             />
           ))}
@@ -236,35 +244,45 @@ const NewPageContent = () => {
       <Box sx={{ flex: 1, p: 3, position: 'relative', overflowY: 'auto' }}>
         {/* Audio Player Mock */}
         <Box sx={{ mb: 4 }}>
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
             <IconButton onClick={handlePlayToggle} sx={{ p: 0 }}>
               {state.playing ? (
                 <PauseIcon fontSize="large" sx={{ color: 'neutral.main' }} />
               ) : (
-                <PlayArrowIcon fontSize="large" sx={{ color: 'neutral.main' }} />
+                <PlayArrowIcon
+                  fontSize="large"
+                  sx={{ color: 'neutral.main' }}
+                />
               )}
             </IconButton>
             <Typography variant="body2">
-                {selection ? formatTime(selection.start) + ' - ' + formatTime(selection.end) : formatTime(currentTime)} / {formatTime(duration || 0)}
+              {selection
+                ? formatTime(selection.start) +
+                  ' - ' +
+                  formatTime(selection.end)
+                : formatTime(currentTime)}{' '}
+              / {formatTime(duration || 0)}
             </Typography>
-            </Stack>
+          </Stack>
 
-            <Box
-                ref={containerRef}
-                aria-label="Waveform"
-                sx={{
-                    height: 80,
-                    bgcolor: 'action.hover',
-                    my: 2,
-                    borderRadius: 1,
-                    overflow: 'hidden',
-                    width: '100%'
-                }}
-            />
+          <Box
+            ref={containerRef}
+            aria-label="Waveform"
+            sx={{
+              height: 80,
+              bgcolor: 'action.hover',
+              my: 2,
+              borderRadius: 1,
+              overflow: 'hidden',
+              width: '100%',
+            }}
+          />
 
-            <Typography variant="body2">
-                {selection ? formatTime(selection.start) + ' - ' + formatTime(selection.end) : formatTime(currentTime)}
-            </Typography>
+          <Typography variant="body2">
+            {selection
+              ? formatTime(selection.start) + ' - ' + formatTime(selection.end)
+              : formatTime(currentTime)}
+          </Typography>
         </Box>
 
         <Button
@@ -278,7 +296,7 @@ const NewPageContent = () => {
             fontWeight: 600,
             fontSize: '1rem',
             '&:hover': { bgcolor: '#555' },
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
           }}
         >
           + Add Question...
@@ -286,7 +304,13 @@ const NewPageContent = () => {
 
         <Typography
           align="center"
-          sx={{ mt: 4, color: 'text.secondary', maxWidth: 400, mx: 'auto', lineHeight: 1.6 }}
+          sx={{
+            mt: 4,
+            color: 'text.secondary',
+            maxWidth: 400,
+            mx: 'auto',
+            lineHeight: 1.6,
+          }}
         >
           Tap + to add a question here. Drag to select a range, or double-tap to
           select all.
@@ -303,7 +327,7 @@ const NewPageContent = () => {
             width: 56,
             height: 56,
             bgcolor: 'background.paper',
-            boxShadow: 2
+            boxShadow: 2,
           }}
         >
           <ChatBubbleOutlineIcon color="action" />
@@ -322,17 +346,31 @@ const NewPageContent = () => {
           bgcolor: '#f5f5f5',
         }}
       >
-        <Button variant="outlined" startIcon={<ChevronLeftIcon />} sx={{ textTransform: 'none', px: 3, bgcolor: 'white' }}>
+        <Button
+          variant="outlined"
+          startIcon={<ChevronLeftIcon />}
+          sx={{ textTransform: 'none', px: 3, bgcolor: 'white' }}
+        >
           Previous
         </Button>
         <Button
           variant="outlined"
           startIcon={<CheckBoxOutlineBlankIcon />}
-          sx={{ textTransform: 'none', px: 3, color: 'text.primary', borderColor: 'divider', bgcolor: 'white' }}
+          sx={{
+            textTransform: 'none',
+            px: 3,
+            color: 'text.primary',
+            borderColor: 'divider',
+            bgcolor: 'white',
+          }}
         >
           Step Complete
         </Button>
-        <Button variant="outlined" endIcon={<ChevronRightIcon />} sx={{ textTransform: 'none', px: 3, bgcolor: 'white' }}>
+        <Button
+          variant="outlined"
+          endIcon={<ChevronRightIcon />}
+          sx={{ textTransform: 'none', px: 3, bgcolor: 'white' }}
+        >
           Next
         </Button>
       </Paper>

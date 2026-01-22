@@ -1036,6 +1036,10 @@ if (requestedSchema > 9 && schemaDefinition.models) {
   schemaDefinition.version = 10;
 }
 
+if (requestedSchema > 10 && schemaDefinition.models) {
+  schemaDefinition.version = 11;
+}
+
 export const schema = new RecordSchema(schemaDefinition);
 
 export const keyMap = new RecordKeyMap();
