@@ -25,6 +25,7 @@ import {
   PassageDetailProvider,
   PassageDetailContext,
 } from '../context/PassageDetailContext';
+import { AddQuestionDialog } from '../components/AddQuestionDialog';
 
 const NewPageContent = () => {
   const navigate = useMyNavigate();
@@ -39,6 +40,7 @@ const NewPageContent = () => {
     start: number;
     end: number;
   } | null>(null);
+  const [addQuestionOpen, setAddQuestionOpen] = React.useState(false);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -288,6 +290,7 @@ const NewPageContent = () => {
         <Button
           variant="contained"
           fullWidth
+          onClick={() => setAddQuestionOpen(true)}
           sx={{
             bgcolor: '#333',
             color: 'white',
@@ -332,6 +335,14 @@ const NewPageContent = () => {
         >
           <ChatBubbleOutlineIcon color="action" />
         </IconButton>
+
+        <AddQuestionDialog
+          open={addQuestionOpen}
+          onClose={() => setAddQuestionOpen(false)}
+          initialSelection={
+            selection || { start: currentTime, end: currentTime }
+          }
+        />
       </Box>
 
       {/* Footer Navigation */}
