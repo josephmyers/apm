@@ -30,7 +30,7 @@ import { AddQuestionDialog } from '../components/AddQuestionDialog';
 const NewPageContent = () => {
   const navigate = useMyNavigate();
   const theme = useTheme();
-  const { state, setState } = useContext(PassageDetailContext);
+  const { state } = useContext(PassageDetailContext);
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const regionsRef = useRef<RegionsPlugin | null>(null);
@@ -40,6 +40,7 @@ const NewPageContent = () => {
     start: number;
     end: number;
   } | null>(null);
+  const [playing, setPlaying] = React.useState(false);
   const [addQuestionOpen, setAddQuestionOpen] = React.useState(false);
 
   // Initialize WaveSurfer
@@ -53,7 +54,7 @@ const NewPageContent = () => {
     wavesurferRef.current = WaveSurfer.create({
       container: containerRef.current,
       waveColor: '#9fc5e8',
-      progressColor: '#135CB9',
+      progressColor: '#9fc5e8',
       cursorColor: '#333',
       cursorWidth: 4,
       barWidth: 2,
@@ -93,16 +94,14 @@ const NewPageContent = () => {
       container.addEventListener('mouseup', handleMouseUp);
     }
 
-    wsRegions.on('region-clicked', (region, e) => {
+    wsRegions.on('region-clicked', (_, e) => {
       e.stopPropagation();
-      region.play();
-      if (state.setPlaying) state.setPlaying(true);
     });
 
     ws.on('timeupdate', (time) => setCurrentTime(time));
     ws.on('decode', (d) => setDuration(d));
     ws.on('finish', () => {
-      if (state.setPlaying) state.setPlaying(false);
+      setPlaying(false);
     });
 
     // Click outside clears selection
@@ -135,18 +134,16 @@ const NewPageContent = () => {
   useEffect(() => {
     const ws = wavesurferRef.current;
     if (ws) {
-      if (state.playing) {
+      if (playing) {
         ws.play();
       } else {
         ws.pause();
       }
     }
-  }, [state.playing]);
+  }, [playing]);
 
   const handlePlayToggle = () => {
-    if (state.setPlaying) {
-      state.setPlaying(!state.playing);
-    }
+    setPlaying(!playing);
   };
 
   // Logic to get passage info from context
@@ -248,7 +245,7 @@ const NewPageContent = () => {
         <Box sx={{ mb: 4 }}>
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
             <IconButton onClick={handlePlayToggle} sx={{ p: 0 }}>
-              {state.playing ? (
+              {playing ? (
                 <PauseIcon fontSize="large" sx={{ color: 'neutral.main' }} />
               ) : (
                 <PlayArrowIcon
