@@ -18,7 +18,6 @@ import { useSelector } from 'react-redux';
 import { RecordKeyMap } from '@orbit/records';
 import { IRegion } from '../crud/useWavesurferRegions';
 import PassageDetailPlayer from '../components/PassageDetail/PassageDetailPlayer';
-import AddQuestionDialog from '../components/Dialogs/AddQuestionDialog';
 import { formatTime } from '../control/formatTime';
 import { PassageDetailProvider } from '../context/PassageDetailContext';
 import usePassageDetailContext from '../context/usePassageDetailContext';
@@ -366,13 +365,6 @@ export function WorkQAPrepContent() {
           </Button>
         </Box>
       </Paper>
-
-      {/* Add Question Dialog */}
-      <AddQuestionDialog
-        open={addQuestionOpen}
-        onClose={handleCloseAddQuestion}
-        initialSegment={addQuestionSegment}
-      />
     </Box>
   );
 }
