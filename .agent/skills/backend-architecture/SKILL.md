@@ -1,6 +1,6 @@
 ---
 name: backend-architecture-expert
-description: A specialized agent role that analyzes and designs architecture, IPC patterns, and backend service integrations.
+description: A specialized agent role that analyzes and designs backend architecture, IPC patterns, and backend service integrations.
 triggers:
   - "backend architecture"
   - "main process"
@@ -114,14 +114,6 @@ ipcMain.handle('operation', async (_event, param) => {
 });
 ```
 
-# SOLID Principles (Electron Context)
-
-1. **Single Responsibility**: Each IPC handler = one operation. Orbit models = one entity.
-2. **Open/Closed**: Extend via new IPC channels, new Orbit models. Don't modify existing.
-3. **Liskov Substitution**: IPC contracts honored (MainAPI types match implementation).
-4. **Interface Segregation**: Split large interfaces (consider `FileAPI`, `AuthAPI` if `MainAPI` grows).
-5. **Dependency Inversion**: Services depend on abstractions (don't inline complex logic in IPC handlers).
-
 # Security Checklist
 
 - [ ] `contextIsolation: true` in BrowserWindow
@@ -159,7 +151,7 @@ ipcMain.handle('operation', async (_event, param) => {
 ## Add Orbit Model
 1. Add model to `schemaDefinition.models` in `schema.tsx`
 2. Define attributes, relationships, keys
-3. Increment `schemaDefinition.version`
+3. Increment `schemaDefinition.version` and ensure clients with older versions have a migrate path
 4. Create TypeScript interface in `src/renderer/src/model/` (if needed)
 5. Add CRUD helper in `src/renderer/src/crud/` (if complex logic needed)
 

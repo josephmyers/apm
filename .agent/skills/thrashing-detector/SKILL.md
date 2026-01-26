@@ -1,6 +1,6 @@
 ---
 name: Thrashing Detector
-description: Detects unproductive debugging loops and triggers revert-first approach
+description: Detects unproductive debugging loops
 ---
 
 # Thrashing Detector Skill
@@ -16,7 +16,7 @@ description: Detects unproductive debugging loops and triggers revert-first appr
 - Each fix creates new bugs
 - Lost track of what was tried
 
-## Revert-First Protocol
+## Protocol
 
 ### 1. STOP adding code after 3-4 failed attempts
 
@@ -38,5 +38,5 @@ git stash              # Store work
 
 ## Example
 
-This conversation: Added ready state, blob refs, effects... kept failing.
+Added ready state, blob refs, effects... kept failing.
 User reverted → immediately fixed → proved my changes broke it.

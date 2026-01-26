@@ -1,11 +1,11 @@
 ---
 name: UI Tester
-description: Expert in Electron UI testing using MCP tools to verify agent changes before task completion
+description: Expert in UI testing using MCP tools to verify agent changes before task completion
 ---
 
 # UI Tester Skill
 
-Verify that agent changes work in the running Electron app using MCP tools.
+Verify that agent changes work in the running app using MCP tools.
 
 ## Tools Available
 
@@ -26,12 +26,11 @@ Verify that agent changes work in the running Electron app using MCP tools.
 
 **UI Presence**
 - Is element visible in UI tree?
-- Correct label/text?
+- Correct state?
 - Proper location?
 
 **Interactive Behavior**
 - Buttons clickable?
-- Inputs accept text?
 - Handlers firing?
 - Audio plays?
 - Waveform interact-able?
