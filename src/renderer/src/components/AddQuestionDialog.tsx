@@ -1,4 +1,11 @@
-import { useContext, useEffect, useRef, useState, useCallback } from 'react';
+import {
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  ChangeEvent,
+} from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import {
@@ -15,8 +22,10 @@ import PauseIcon from '@mui/icons-material/Pause';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import StopIcon from '@mui/icons-material/Stop';
 import { PassageDetailContext } from '../context/PassageDetailContext';
 import { formatTime } from '../control/formatTime';
+import { useWavRecorder } from '../crud/useWavRecorder';
 
 interface Props {
   open: boolean;
@@ -34,11 +43,41 @@ export const AddQuestionDialog = ({
   const passageWsRef = useRef<WaveSurfer | null>(null);
   const audioUrlRef = useRef<string | null>(null);
 
+  const questionContainerRef = useRef<HTMLDivElement>(null);
+  const questionWsRef = useRef<WaveSurfer | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [passagePlaying, setPassagePlaying] = useState(false);
   const [passageTime, setPassageTime] = useState(0);
   const [passageDuration, setPassageDuration] = useState(0);
   const [questionTitle, setQuestionTitle] = useState('Question 1');
   const [speaker, setSpeaker] = useState('');
+
+  const [questionAudioUrl, setQuestionAudioUrl] = useState<string | null>(null);
+  const [questionPlaying, setQuestionPlaying] = useState(false);
+  const [questionTime, setQuestionTime] = useState(0);
+  const [questionDuration, setQuestionDuration] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+
+  const handleRecordingStop = useCallback(
+    (blob: Blob) => {
+      setIsRecording(false);
+      if (questionAudioUrl) {
+        URL.revokeObjectURL(questionAudioUrl);
+      }
+      const url = URL.createObjectURL(blob);
+      setQuestionAudioUrl(url);
+    },
+    [questionAudioUrl]
+  );
+
+  const { startRecording, stopRecording } = useWavRecorder(
+    true,
+    () => setIsRecording(true),
+    handleRecordingStop,
+    (err) => console.error('Recorder error:', err),
+    async () => {}
+  );
 
   // Initializing Passage WaveSurfer
   const initPassageWS = useCallback(() => {
@@ -113,6 +152,90 @@ export const AddQuestionDialog = ({
     passageWsRef.current?.playPause();
   };
 
+  const handleQuestionPlayToggle = () => {
+    questionWsRef.current?.playPause();
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (questionAudioUrl) {
+        URL.revokeObjectURL(questionAudioUrl);
+      }
+      const url = URL.createObjectURL(file);
+      setQuestionAudioUrl(url);
+    }
+  };
+
+  const handleRecordClick = async () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      await startRecording();
+    }
+  };
+
+  // Initialize Question WaveSurfer when audio URL changes
+  useEffect(() => {
+    if (!questionContainerRef.current || !questionAudioUrl) return;
+
+    if (questionWsRef.current) {
+      questionWsRef.current.destroy();
+    }
+
+    const ws = WaveSurfer.create({
+      container: questionContainerRef.current,
+      waveColor: '#9fc5e8',
+      progressColor: '#9fc5e8',
+      cursorColor: '#333',
+      cursorWidth: 4,
+      barWidth: 2,
+      height: 100,
+      normalize: true,
+    });
+
+    questionWsRef.current = ws;
+
+    ws.on('ready', () => {
+      setQuestionDuration(ws.getDuration());
+    });
+
+    ws.on('timeupdate', (time) => setQuestionTime(time));
+    ws.on('play', () => setQuestionPlaying(true));
+    ws.on('pause', () => setQuestionPlaying(false));
+    ws.on('finish', () => setQuestionPlaying(false));
+
+    ws.load(questionAudioUrl);
+
+    return () => {
+      ws.destroy();
+      questionWsRef.current = null;
+    };
+  }, [questionAudioUrl]);
+
+  // Cleanup question audio URL on unmount
+  useEffect(() => {
+    return () => {
+      if (questionAudioUrl) {
+        URL.revokeObjectURL(questionAudioUrl);
+      }
+    };
+  }, [questionAudioUrl]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setQuestionAudioUrl(null);
+      setQuestionTime(0);
+      setQuestionDuration(0);
+      setQuestionTitle('Question 1');
+    }
+  }, [open]);
+
   return (
     <Dialog
       open={open}
@@ -182,11 +305,27 @@ export const AddQuestionDialog = ({
             sx={{ mb: 1.5 }}
           >
             <Stack direction="row" alignItems="center" spacing={1}>
-              <IconButton disabled sx={{ p: 0 }}>
-                <PlayArrowIcon sx={{ color: '#ccc', fontSize: 32 }} />
+              <IconButton
+                disabled={!questionAudioUrl}
+                onClick={handleQuestionPlayToggle}
+                sx={{ p: 0 }}
+              >
+                {questionPlaying ? (
+                  <PauseIcon sx={{ color: 'neutral.main', fontSize: 32 }} />
+                ) : (
+                  <PlayArrowIcon
+                    sx={{
+                      color: questionAudioUrl ? 'neutral.main' : '#ccc',
+                      fontSize: 32,
+                    }}
+                  />
+                )}
               </IconButton>
-              <Typography variant="body1" color="text.secondary">
-                0:00 / 0:00
+              <Typography
+                variant="body1"
+                color={questionAudioUrl ? 'text.primary' : 'text.secondary'}
+              >
+                {formatTime(questionTime)} / {formatTime(questionDuration)}
               </Typography>
             </Stack>
             <TextField
@@ -203,16 +342,31 @@ export const AddQuestionDialog = ({
                 },
               }}
             />
-            <Button startIcon={<CloudUploadOutlinedIcon />}>Upload...</Button>
+            <input
+              type="file"
+              accept="audio/*"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+            <Button
+              startIcon={<CloudUploadOutlinedIcon />}
+              onClick={handleUploadClick}
+            >
+              Upload...
+            </Button>
             <IconButton>
               <MoreVertIcon />
             </IconButton>
           </Stack>
           <Box
+            ref={questionContainerRef}
             sx={{
               height: 100, // Matching the larger empty space in image
               bgcolor: '#f0f0f0',
               width: '100%',
+              borderRadius: 0,
+              overflow: 'hidden',
             }}
           />
         </Box>
@@ -238,16 +392,21 @@ export const AddQuestionDialog = ({
 
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 5 }}>
             <IconButton
+              onClick={handleRecordClick}
+              aria-label={isRecording ? 'Stop' : 'Record'}
               sx={{
                 width: 80,
                 height: 80,
-                bgcolor: '#d32f2f',
-                color: 'white',
-                '&:hover': { bgcolor: '#b71c1c' },
+                bgcolor: isRecording ? 'white' : '#d32f2f',
+                color: isRecording ? '#d32f2f' : 'white',
+                border: isRecording ? '2px solid #d32f2f' : 'none',
+                '&:hover': {
+                  bgcolor: isRecording ? '#ffebee' : '#b71c1c',
+                },
                 '& .MuiSvgIcon-root': { fontSize: 40 },
               }}
             >
-              <FiberManualRecordIcon />
+              {isRecording ? <StopIcon /> : <FiberManualRecordIcon />}
             </IconButton>
           </Box>
         </Box>
@@ -257,7 +416,11 @@ export const AddQuestionDialog = ({
           <Button onClick={onClose} sx={{ minWidth: 140, py: 1 }}>
             Cancel
           </Button>
-          <Button color="primary" disabled sx={{ minWidth: 140, py: 1 }}>
+          <Button
+            variant="primary"
+            disabled={!questionAudioUrl}
+            sx={{ minWidth: 140, py: 1 }}
+          >
             Continue
           </Button>
         </Stack>
