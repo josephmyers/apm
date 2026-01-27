@@ -279,12 +279,6 @@ const NewPageContent = () => {
               width: '100%',
             }}
           />
-
-          <Typography variant="body2">
-            {selection
-              ? formatTime(selection.start) + ' - ' + formatTime(selection.end)
-              : formatTime(currentTime)}
-          </Typography>
         </Box>
 
         <Box sx={{ mt: 3 }}>
