@@ -15,7 +15,7 @@ import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ForumIcon from '@mui/icons-material/Forum';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
@@ -26,6 +26,8 @@ import {
   PassageDetailContext,
 } from '../context/PassageDetailContext';
 import { AddQuestionDialog } from '../components/AddQuestionDialog';
+import { usePassageQuestions } from '../crud/usePassageQuestions';
+import { QuestionListItem } from '../components/QuestionListItem';
 
 const NewPageContent = () => {
   const navigate = useMyNavigate();
@@ -42,6 +44,7 @@ const NewPageContent = () => {
   } | null>(null);
   const [playing, setPlaying] = React.useState(false);
   const [addQuestionOpen, setAddQuestionOpen] = React.useState(false);
+  const questions = usePassageQuestions(state.passage?.id);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -284,6 +287,21 @@ const NewPageContent = () => {
           </Typography>
         </Box>
 
+        <Box sx={{ mt: 3 }}>
+          {questions.map((q) => (
+            <QuestionListItem
+              key={q.id}
+              title={q.attributes.title}
+              speaker={q.attributes.speaker}
+              segmentStart={q.attributes.segmentStart}
+              segmentEnd={q.attributes.segmentEnd}
+              onPlay={() => {
+                // TODO: Implement playback
+              }}
+            />
+          ))}
+        </Box>
+
         <Button
           variant="contained"
           fullWidth
@@ -292,6 +310,7 @@ const NewPageContent = () => {
             bgcolor: '#333',
             color: 'white',
             textTransform: 'none',
+            mt: 2,
             py: 1.5,
             fontWeight: 600,
             fontSize: '1rem',
@@ -302,35 +321,28 @@ const NewPageContent = () => {
           + Add Question...
         </Button>
 
-        <Typography
-          align="center"
-          sx={{
-            mt: 4,
-            color: 'text.secondary',
-            maxWidth: 400,
-            mx: 'auto',
-            lineHeight: 1.6,
-          }}
-        >
-          Tap + to add a question here. Drag to select a range, or double-tap to
-          select all.
-        </Typography>
+        {questions.length === 0 && (
+          <Typography
+            align="center"
+            sx={{
+              mt: 4,
+              color: 'text.secondary',
+              maxWidth: 400,
+              mx: 'auto',
+              lineHeight: 1.6,
+            }}
+          >
+            Tap + to add a question here. Drag to select a range, or double-tap
+            to select all.
+          </Typography>
+        )}
 
         <IconButton
-          sx={{
-            position: 'absolute',
-            right: 24,
-            bottom: 24,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2,
-            width: 56,
-            height: 56,
-            bgcolor: 'background.paper',
-            boxShadow: 2,
-          }}
+          variant="floating"
+          aria-label="forum"
+          sx={{ position: 'absolute', right: 24, bottom: 24 }}
         >
-          <ChatBubbleOutlineIcon color="action" />
+          <ForumIcon />
         </IconButton>
 
         <AddQuestionDialog
@@ -354,31 +366,16 @@ const NewPageContent = () => {
           bgcolor: '#f5f5f5',
         }}
       >
-        <Button
-          variant="outlined"
-          startIcon={<ChevronLeftIcon />}
-          sx={{ textTransform: 'none', px: 3, bgcolor: 'white' }}
-        >
+        <Button startIcon={<ChevronLeftIcon />} sx={{ bgcolor: 'white' }}>
           Previous
         </Button>
         <Button
-          variant="outlined"
           startIcon={<CheckBoxOutlineBlankIcon />}
-          sx={{
-            textTransform: 'none',
-            px: 3,
-            color: 'text.primary',
-            borderColor: 'divider',
-            bgcolor: 'white',
-          }}
+          sx={{ bgcolor: 'white' }}
         >
           Step Complete
         </Button>
-        <Button
-          variant="outlined"
-          endIcon={<ChevronRightIcon />}
-          sx={{ textTransform: 'none', px: 3, bgcolor: 'white' }}
-        >
+        <Button endIcon={<ChevronRightIcon />} sx={{ bgcolor: 'white' }}>
           Next
         </Button>
       </Paper>

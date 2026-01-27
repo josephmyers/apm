@@ -104,4 +104,8 @@ export interface MainAPI {
   downloadStat: (token: string) => Promise<string>;
   downloadClose: (token: string) => Promise<void>;
   normalize: (input: string, output?: string) => Promise<unknown>;
+  saveQuestionAudio: (
+    passageId: string,
+    audioBuffer: ArrayBuffer
+  ) => Promise<string>;
 }

@@ -26,6 +26,7 @@ import StopIcon from '@mui/icons-material/Stop';
 import { PassageDetailContext } from '../context/PassageDetailContext';
 import { formatTime } from '../control/formatTime';
 import { useWavRecorder } from '../crud/useWavRecorder';
+import { usePassageQuestionCreate } from '../crud/usePassageQuestionCreate';
 
 interface Props {
   open: boolean;
@@ -236,6 +237,30 @@ export const AddQuestionDialog = ({
     }
   }, [open]);
 
+  /* Action Buttons */
+  const { createQuestion } = usePassageQuestionCreate();
+
+  const handleContinue = async () => {
+    if (!questionAudioUrl) return;
+
+    // Get the blob from the URL
+    const response = await fetch(questionAudioUrl);
+    const blob = await response.blob();
+
+    await createQuestion({
+      passageId: state.passage?.id || '',
+      mediafileId: state.mediafileId || '',
+      title: questionTitle,
+      speaker: speaker,
+      segmentStart: initialSelection.start,
+      segmentEnd: initialSelection.end,
+      audioBlob: blob,
+      duration: questionDuration,
+    });
+
+    onClose();
+  };
+
   return (
     <Dialog
       open={open}
@@ -419,6 +444,7 @@ export const AddQuestionDialog = ({
           <Button
             variant="primary"
             disabled={!questionAudioUrl}
+            onClick={handleContinue}
             sx={{ minWidth: 140, py: 1 }}
           >
             Continue

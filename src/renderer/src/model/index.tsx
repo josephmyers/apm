@@ -69,3 +69,4 @@ export * from './intellectualProperty';
 export * from './vwchecksum';
 export * from './IExecResult';
 export * from './SectionArray';
+export * from './passageQuestion';

@@ -1,5 +1,14 @@
 import { ThemeProvider, createTheme } from '@mui/material';
 import DataChanges from './hoc/DataChanges';
+
+declare module '@mui/material/IconButton' {
+  interface IconButtonPropsColorOverrides {
+    neutral: true;
+  }
+  interface IconButtonOwnProps {
+    variant?: 'floating';
+  }
+}
 import { UnsavedProvider } from './context/UnsavedContext';
 import SnackBarProvider from './hoc/SnackBar';
 import { HotKeyProvider } from './context/HotKeyContext';
@@ -48,7 +57,7 @@ function App(): React.JSX.Element {
                   color: 'black',
                   background: '#f0f0f0',
                   '&:hover': {
-                    background: '#e2e2e2ff',
+                    background: '#e2e2e2',
                   },
                 },
               },
@@ -67,22 +76,25 @@ function App(): React.JSX.Element {
                     },
                   },
                 },
+              ],
+            },
+            MuiIconButton: {
+              variants: [
                 {
                   props: { variant: 'floating' },
                   style: {
-                    position: 'absolute',
-                    right: 24,
-                    bottom: 24,
                     width: 56,
                     height: 56,
-                    minWidth: 56,
-                    padding: 0,
                     border: '1px solid',
                     borderColor: '#e0e0e0',
                     backgroundColor: '#ffffff',
-                    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+                    borderRadius: '8px',
+                    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+                    color: 'rgba(0, 0, 0, 0.5)',
+                    transition: 'all 0.2s ease-in-out',
                     '&:hover': {
                       backgroundColor: '#f5f5f5',
+                      boxShadow: '0px 6px 16px rgba(0, 0, 0, 0.2)',
                     },
                   },
                 },

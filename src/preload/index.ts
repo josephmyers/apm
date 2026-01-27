@@ -101,6 +101,8 @@ const api = {
     await ipcRenderer.invoke('downloadClose', token),
   normalize: async (input, output) =>
     await ipcRenderer.invoke('normalize', input, output),
+  saveQuestionAudio: async (passageId, audioBuffer) =>
+    await ipcRenderer.invoke('saveQuestionAudio', passageId, audioBuffer),
 } as MainAPI;
 
 // Use `contextBridge` APIs to expose Electron APIs to
