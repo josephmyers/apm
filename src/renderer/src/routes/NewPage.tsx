@@ -74,31 +74,26 @@ const NewPageContent = () => {
     });
 
     wsRegions.on('region-created', (region) => {
+      if (region.start === region.end) return;
+
+      // Remove other selected regions
       wsRegions.getRegions().forEach((r) => {
-        if (r.id !== region.id) r.remove();
+        if (r.id !== region.id && r.start !== r.end) r.remove();
       });
+
       setSelection({ start: region.start, end: region.end });
       ws.setTime(region.start);
     });
 
     wsRegions.on('region-updated', (region) => {
       setSelection({ start: region.start, end: region.end });
+      ws.setTime(region.start);
     });
 
-    const handleMouseUp = () => {
-      const regions = wsRegions.getRegions();
-      if (regions.length > 0) {
-        ws.setTime(regions[0].start);
+    wsRegions.on('region-clicked', (region, e) => {
+      if (region.start !== region.end) {
+        e.stopPropagation();
       }
-    };
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('mouseup', handleMouseUp);
-    }
-
-    wsRegions.on('region-clicked', (_, e) => {
-      e.stopPropagation();
     });
 
     ws.on('timeupdate', (time) => setCurrentTime(time));
@@ -109,14 +104,13 @@ const NewPageContent = () => {
 
     // Click outside clears selection
     ws.on('click', () => {
-      wsRegions.clearRegions();
+      wsRegions.getRegions().forEach((r) => {
+        if (r.start !== r.end) r.remove(); // Only remove selections, not markers
+      });
       setSelection(null);
     });
 
     return () => {
-      if (container) {
-        container.removeEventListener('mouseup', handleMouseUp);
-      }
       ws.destroy();
       wavesurferRef.current = null;
     };
@@ -132,7 +126,31 @@ const NewPageContent = () => {
     return undefined;
   }, [state.audioBlob]);
 
-  // Sync playback state
+  useEffect(() => {
+    const wsRegions = regionsRef.current;
+    if (!wsRegions) return;
+
+    // Remove existing question markers
+    wsRegions.getRegions().forEach((r) => {
+      if (r.id.startsWith('question-')) r.remove();
+    });
+
+    // Add markers for each question at segmentStart
+    questions.forEach((q, index) => {
+      const time = q.attributes.segmentStart;
+      if (time !== undefined && time !== null) {
+        wsRegions.addRegion({
+          id: `question-${index}`,
+          start: time,
+          end: time,
+          color: 'rgba(0, 0, 0, 0.5)',
+          drag: false,
+          resize: false,
+        });
+      }
+    });
+  }, [questions, duration]); //depending on duration refreshes when WS loads
+
   // Sync playing state
   useEffect(() => {
     const ws = wavesurferRef.current;
