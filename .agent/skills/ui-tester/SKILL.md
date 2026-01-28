@@ -14,77 +14,28 @@ Verify that agent changes work in the running app using MCP tools.
 - `mcp_electron-dev_fill_input`: Fills input by label/placeholder
 - `mcp_electron-dev_drag_element`: Drags element by x/y offsets
 - `mcp_electron-dev_reload_app`: Reloads current page
+- `mcp_electron-dev_take_screenshot`: Take screenshot of app
 
 ## Testing Process
 
 ### 1. Understand the Change
 - What was requested?
-- What components changed?
-- What behavior should work?
 
 ### 2. Run Tests
 
-**UI Presence**
-- Is element visible in UI tree?
-- Correct state?
-- Proper location?
-
-**Interactive Behavior**
-- Buttons clickable?
-- Handlers firing?
-- Audio plays?
-- Waveform interact-able?
-
 **State Verification** ⚠️ CRITICAL
-Don't just check visibility—verify ACTUAL state:
-
-- **Audio/Media**: Duration > 0? Playback state correct? Regions positioned right? Check `currentTime`, `duration` values
-- **Forms**: Values persist? Validation works? Errors show?
-- **Dialogs**: Open/close properly? State maintained/reset correctly?
-
-**Complete User Flows**
-Test realistic paths, not isolated actions:
+Don't just check visibility—verify ACTUAL state. Test realistic paths, not isolated actions:
 ```
 1. Navigate to page
-2. Interact with feature
-3. Verify state changes
-4. Complete action
-5. Verify results
-6. Check for side effects/corruption
-```
-
-### 3. Report Results
-
-**PASS Format:**
-```
-✅ VERIFICATION PASSED
-Test: [Feature Name]
-- ✓ [Action 1] works
-- ✓ [Action 2] works
-- ✓ [State check] verified
-All functionality works as requested.
-```
-
-**FAIL Format:**
-```
-❌ VERIFICATION FAILED
-Test: [Feature Name]
-- ✓ [What works]
-- ✗ [What fails]
-
-ISSUES:
-1. [Specific problem]
-   - [Likely cause]
-
-ACTIONS REQUIRED:
-- [Fix needed]
-- Re-test after fix
+2. Interact with impacted features
+3. Verify state changes as expected
+4. Look carefully for side effects/corruption
 ```
 
 ## Critical Rules
 
 1. **Never Skip State Verification**: "Make playhead jump to 30s" = verify `currentTime = 30`, not just UI presence
-2. **Test Full Flows**: Don't just test happy path—test edge cases, invalid inputs, component interaction
+2. **Test Full Flows**: Don't just test happy path; test edge cases, invalid inputs, component interaction
 3. **Report Honestly**: If MCP can't access elements or verification is limited, say so explicitly
 4. **Block Until Fixed**: If tests fail, agent MUST fix and re-test. DO NOT PASS broken features.
 
