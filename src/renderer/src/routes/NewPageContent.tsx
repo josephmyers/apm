@@ -299,10 +299,14 @@ export const NewPageContent = () => {
 
       {/* Main Content Area */}
       <Box sx={{ flex: 1, p: 3, position: 'relative', overflowY: 'auto' }}>
-        {/* Audio Player Mock */}
+        {/* Audio Player */}
         <Box sx={{ mb: 4 }}>
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
-            <IconButton onClick={handlePlayToggle} sx={{ p: 0 }}>
+            <IconButton
+              onClick={handlePlayToggle}
+              sx={{ p: 0 }}
+              aria-label={playing ? 'pause' : 'play'}
+            >
               {playing ? (
                 <PauseIcon fontSize="large" sx={{ color: 'neutral.main' }} />
               ) : (
@@ -344,6 +348,7 @@ export const NewPageContent = () => {
               speaker={q.attributes.speaker}
               segmentStart={q.attributes.segmentStart}
               segmentEnd={q.attributes.segmentEnd}
+              audioPath={q.attributes.audioPath}
               expanded={expandedQuestionId === q.id}
               onToggle={() =>
                 handleQuestionToggle(
@@ -352,9 +357,6 @@ export const NewPageContent = () => {
                   q.attributes.segmentEnd
                 )
               }
-              onPlay={() => {
-                // TODO: Implement playback
-              }}
             />
           ))}
         </Box>
