@@ -86,6 +86,7 @@ export const QuestionListItem = ({
         sx={{
           p: 0,
           pl: 1,
+          minHeight: '34px',
           cursor: expanded ? 'default' : 'pointer',
           '&:hover': { bgcolor: expanded ? 'transparent' : '#f9f9f9' },
         }}

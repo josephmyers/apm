@@ -429,7 +429,7 @@ export const NewPageContent = () => {
             return (
               <>
                 {questions.map((q, index) => (
-                  <Box key={q.id} sx={{ order: index * 2 + 2 }}>
+                  <Box key={q.id} sx={{ order: index * 2 + 2, my: '1px' }}>
                     <QuestionListItem
                       title={q.attributes.title}
                       speaker={q.attributes.speaker}
@@ -446,7 +446,7 @@ export const NewPageContent = () => {
                   variant={expandedQuestionId ? undefined : 'primary'}
                   fullWidth
                   onClick={() => setAddQuestionOpen(true)}
-                  sx={{ order: buttonOrder }}
+                  sx={{ order: buttonOrder, my: '4px' }}
                 >
                   + Add Question...
                 </Button>
