@@ -9,6 +9,8 @@ interface Props {
   speaker: string;
   segmentStart: number;
   segmentEnd: number;
+  expanded: boolean;
+  onToggle?: () => void;
   onPlay?: () => void;
 }
 
@@ -17,12 +19,16 @@ export const QuestionListItem = ({
   speaker,
   segmentStart,
   segmentEnd,
+  expanded: isExpanded,
+  onToggle,
   onPlay,
 }: Props) => {
-  const [expanded, setExpanded] = useState(false);
+  const expanded = isExpanded;
 
   const handleToggle = () => {
-    setExpanded(!expanded);
+    if (onToggle) {
+      onToggle();
+    }
   };
 
   const timeLabel =

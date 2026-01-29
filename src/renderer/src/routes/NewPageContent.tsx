@@ -41,6 +41,9 @@ export const NewPageContent = () => {
   } | null>(null);
   const [playing, setPlaying] = React.useState(false);
   const [addQuestionOpen, setAddQuestionOpen] = React.useState(false);
+  const [expandedQuestionId, setExpandedQuestionId] = React.useState<
+    string | null
+  >(null);
   const questions = usePassageQuestions(state.passage?.id);
 
   // Initialize WaveSurfer
@@ -304,6 +307,10 @@ export const NewPageContent = () => {
               speaker={q.attributes.speaker}
               segmentStart={q.attributes.segmentStart}
               segmentEnd={q.attributes.segmentEnd}
+              expanded={expandedQuestionId === q.id}
+              onToggle={() =>
+                setExpandedQuestionId(expandedQuestionId === q.id ? null : q.id)
+              }
               onPlay={() => {
                 // TODO: Implement playback
               }}
