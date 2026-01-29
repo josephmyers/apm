@@ -431,11 +431,13 @@ export const NewPageContent = () => {
                 {questions.map((q, index) => (
                   <Box key={q.id} sx={{ order: index * 2 + 2, my: '1px' }}>
                     <QuestionListItem
+                      questionId={q.id}
                       title={q.attributes.title}
                       speaker={q.attributes.speaker}
                       segmentStart={q.attributes.segmentStart}
                       segmentEnd={q.attributes.segmentEnd}
                       audioPath={q.attributes.audioPath}
+                      duration={q.attributes.duration}
                       expanded={expandedQuestionId === q.id}
                       onToggle={() => handleQuestionToggle(q.id)}
                     />

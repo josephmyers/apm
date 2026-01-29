@@ -1,33 +1,49 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Typography, Stack, IconButton, Collapse } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Stack,
+  IconButton,
+  Collapse,
+  Button,
+} from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import EditIcon from '@mui/icons-material/Edit';
 import { formatTime } from '../control/formatTime';
 import { loadBlobAsync } from '../utils/loadBlob';
+import { AddQuestionDialog } from './AddQuestionDialog';
 
 interface Props {
+  questionId: string;
   title: string;
   speaker: string;
   segmentStart: number;
   segmentEnd: number;
   audioPath?: string;
+  duration: number;
   expanded: boolean;
   onToggle?: () => void;
+  onQuestionUpdated?: (questionId: string) => void;
 }
 
 export const QuestionListItem = ({
+  questionId,
   title,
   speaker,
   segmentStart,
   segmentEnd,
   audioPath,
+  duration,
   expanded,
   onToggle,
+  onQuestionUpdated,
 }: Props) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | undefined>(undefined);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Load the audio blob when audioPath changes and item is expanded
   useEffect(() => {
@@ -138,9 +154,33 @@ export const QuestionListItem = ({
                 </Typography>
               )}
             </Box>
+            <Button
+              startIcon={<EditIcon />}
+              onClick={() => setEditDialogOpen(true)}
+              size="small"
+              sx={{ ml: 1 }}
+            >
+              Edit
+            </Button>
           </Stack>
         </Box>
       </Collapse>
+
+      {/* Edit Question Dialog */}
+      <AddQuestionDialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        initialSelection={{ start: segmentStart, end: segmentEnd }}
+        questionId={questionId}
+        initialTitle={title}
+        initialSpeaker={speaker}
+        initialAudioPath={audioPath}
+        initialDuration={duration}
+        onQuestionUpdated={(id) => {
+          setEditDialogOpen(false);
+          onQuestionUpdated?.(id);
+        }}
+      />
     </Box>
   );
 };

@@ -27,12 +27,20 @@ import { PassageDetailContext } from '../context/PassageDetailContext';
 import { formatTime } from '../control/formatTime';
 import { useWavRecorder } from '../crud/useWavRecorder';
 import { usePassageQuestionCreate } from '../crud/usePassageQuestionCreate';
+import { usePassageQuestionUpdate } from '../crud/usePassageQuestionUpdate';
+import { loadBlobAsync } from '../utils/loadBlob';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   initialSelection: { start: number; end: number };
   onQuestionCreated?: (questionId: string) => void;
+  onQuestionUpdated?: (questionId: string) => void;
+  questionId?: string;
+  initialTitle?: string;
+  initialSpeaker?: string;
+  initialAudioPath?: string;
+  initialDuration?: number;
 }
 
 export const AddQuestionDialog = ({
@@ -40,6 +48,12 @@ export const AddQuestionDialog = ({
   onClose,
   initialSelection,
   onQuestionCreated,
+  onQuestionUpdated,
+  questionId,
+  initialTitle,
+  initialSpeaker,
+  initialAudioPath,
+  initialDuration,
 }: Props) => {
   const { state } = useContext(PassageDetailContext);
   const passageContainerRef = useRef<HTMLDivElement>(null);
@@ -50,11 +64,16 @@ export const AddQuestionDialog = ({
   const questionWsRef = useRef<WaveSurfer | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isEditMode = !!questionId;
+
   const [passagePlaying, setPassagePlaying] = useState(false);
   const [passageTime, setPassageTime] = useState(0);
   const [passageDuration, setPassageDuration] = useState(0);
-  const [questionTitle, setQuestionTitle] = useState('Question 1');
-  const [speaker, setSpeaker] = useState('');
+  const [questionTitle, setQuestionTitle] = useState(
+    initialTitle || 'Question 1'
+  );
+  const [speaker, setSpeaker] = useState(initialSpeaker || '');
+  const [audioChanged, setAudioChanged] = useState(false);
 
   const [questionAudioUrl, setQuestionAudioUrl] = useState<string | null>(null);
   const [questionPlaying, setQuestionPlaying] = useState(false);
@@ -70,6 +89,7 @@ export const AddQuestionDialog = ({
       }
       const url = URL.createObjectURL(blob);
       setQuestionAudioUrl(url);
+      setAudioChanged(true);
     },
     [questionAudioUrl]
   );
@@ -171,6 +191,7 @@ export const AddQuestionDialog = ({
       }
       const url = URL.createObjectURL(file);
       setQuestionAudioUrl(url);
+      setAudioChanged(true);
     }
   };
 
@@ -229,41 +250,93 @@ export const AddQuestionDialog = ({
     };
   }, [questionAudioUrl]);
 
-  // Reset state when dialog closes
+  // Reset state when dialog closes or opens with new data
   useEffect(() => {
     if (!open) {
       setQuestionAudioUrl(null);
       setQuestionTime(0);
       setQuestionDuration(0);
       setQuestionTitle('Question 1');
+      setSpeaker('');
+      setAudioChanged(false);
+    } else if (isEditMode) {
+      // Edit mode: populate with existing data
+      setQuestionTitle(initialTitle || '');
+      setSpeaker(initialSpeaker || '');
+      setQuestionDuration(initialDuration || 0);
+      setAudioChanged(false);
+      // Load existing audio
+      if (initialAudioPath) {
+        loadBlobAsync(initialAudioPath)
+          .then((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              setQuestionAudioUrl(url);
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to load question audio for edit:', err);
+          });
+      }
     }
-  }, [open]);
+  }, [
+    open,
+    isEditMode,
+    initialTitle,
+    initialSpeaker,
+    initialAudioPath,
+    initialDuration,
+  ]);
 
   /* Action Buttons */
   const { createQuestion } = usePassageQuestionCreate();
+  const { updateQuestion } = usePassageQuestionUpdate();
 
   const handleContinue = async () => {
     if (!questionAudioUrl) return;
 
-    // Get the blob from the URL
-    const response = await fetch(questionAudioUrl);
-    const blob = await response.blob();
+    if (isEditMode && questionId) {
+      // Edit mode: update existing question
+      let audioBlob: Blob | undefined;
+      if (audioChanged) {
+        const response = await fetch(questionAudioUrl);
+        audioBlob = await response.blob();
+      }
 
-    const newQuestion = await createQuestion({
-      passageId: state.passage?.id || '',
-      mediafileId: state.mediafileId || '',
-      title: questionTitle,
-      speaker: speaker,
-      segmentStart: initialSelection.start,
-      segmentEnd: initialSelection.end,
-      audioBlob: blob,
-      duration: questionDuration,
-    });
+      const updatedQuestion = await updateQuestion({
+        questionId,
+        title: questionTitle,
+        speaker: speaker,
+        audioBlob,
+        duration: audioChanged ? questionDuration : undefined,
+      });
 
-    onClose();
+      onClose();
 
-    if (onQuestionCreated && newQuestion?.id) {
-      onQuestionCreated(newQuestion.id);
+      if (onQuestionUpdated && updatedQuestion?.id) {
+        onQuestionUpdated(updatedQuestion.id);
+      }
+    } else {
+      // Create mode: create new question
+      const response = await fetch(questionAudioUrl);
+      const blob = await response.blob();
+
+      const newQuestion = await createQuestion({
+        passageId: state.passage?.id || '',
+        mediafileId: state.mediafileId || '',
+        title: questionTitle,
+        speaker: speaker,
+        segmentStart: initialSelection.start,
+        segmentEnd: initialSelection.end,
+        audioBlob: blob,
+        duration: questionDuration,
+      });
+
+      onClose();
+
+      if (onQuestionCreated && newQuestion?.id) {
+        onQuestionCreated(newQuestion.id);
+      }
     }
   };
 
@@ -291,7 +364,7 @@ export const AddQuestionDialog = ({
     >
       <Box sx={{ p: 4, position: 'relative' }}>
         <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
-          Add Question
+          {isEditMode ? 'Edit Question' : 'Add Question'}
         </Typography>
 
         {/* Passage Waveform Section */}
@@ -453,7 +526,7 @@ export const AddQuestionDialog = ({
             onClick={handleContinue}
             sx={{ minWidth: 140, py: 1 }}
           >
-            Continue
+            {isEditMode ? 'Save' : 'Continue'}
           </Button>
         </Stack>
       </Box>
