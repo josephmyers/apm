@@ -34,6 +34,7 @@ export const NewPageContent = () => {
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const regionsRef = useRef<RegionsPlugin | null>(null);
   const questionsRef = useRef<ReturnType<typeof usePassageQuestions>>([]);
+  const selectionRef = useRef<{ start: number; end: number } | null>(null);
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
   const [selection, setSelection] = React.useState<{
@@ -54,6 +55,11 @@ export const NewPageContent = () => {
   useEffect(() => {
     questionsRef.current = questions;
   }, [questions]);
+
+  // Keep selectionRef in sync
+  useEffect(() => {
+    selectionRef.current = selection;
+  }, [selection]);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -85,6 +91,9 @@ export const NewPageContent = () => {
     wsRegions.on('region-created', (region) => {
       if (region.start === region.end) return;
 
+      // Skip programmatically-created regions (from expanding a question)
+      if (region.id === 'user-selection') return;
+
       // Remove other selected regions
       wsRegions.getRegions().forEach((r) => {
         if (r.id !== region.id && r.start !== r.end) r.remove();
@@ -92,11 +101,17 @@ export const NewPageContent = () => {
 
       setSelection({ start: region.start, end: region.end });
       ws.setTime(region.start);
+
+      // Creating a region collapses all question rows
+      setExpandedQuestionId(null);
     });
 
     wsRegions.on('region-updated', (region) => {
       setSelection({ start: region.start, end: region.end });
       ws.setTime(region.start);
+
+      // Updating a region collapses all question rows (user dragged/resized)
+      setExpandedQuestionId(null);
     });
 
     wsRegions.on('region-clicked', (region, e) => {
@@ -105,7 +120,15 @@ export const NewPageContent = () => {
       }
     });
 
-    ws.on('timeupdate', (time) => setCurrentTime(time));
+    ws.on('timeupdate', (time) => {
+      setCurrentTime(time);
+      // Stop playback when reaching end of selection range
+      const sel = selectionRef.current;
+      if (sel && sel.start !== sel.end && time >= sel.end) {
+        ws.pause();
+        setPlaying(false);
+      }
+    });
     ws.on('decode', (d) => setDuration(d));
     ws.on('finish', () => {
       setPlaying(false);

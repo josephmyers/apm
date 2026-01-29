@@ -10,13 +10,13 @@ Defines the interaction between the audio waveform and question list on the Ques
 
 - A vertical marker is displayed at each question's start time.
 - Question markers are non-draggable and non-resizable.
-- Clicking in the waveform should collapse all question rows, unless the click is on a question marker (at the question start), in which case it would expand that question row.
+- Clicking in the waveform should collapse all question rows, unless the click is on a question marker (at the question start), in which case it would expand that question row. Creating or updating a region should also collapse all rows.
 
 ### User Selection
 
 - Drag on the waveform to create a selection (highlighted range).
-- Only one selection can exist at a time; creating a new one removes the previous.
-- Click anywhere on the waveform, outside a region, to clear the selection.
+- Only one selection can exist at a time, either as a marker or a range; creating a new one removes the previous.
+- Clicking anywhere on the waveform, outside a region, clears the selection.
 
 ### Playback
 
