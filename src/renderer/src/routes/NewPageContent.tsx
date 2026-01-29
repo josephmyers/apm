@@ -167,6 +167,43 @@ export const NewPageContent = () => {
     setPlaying(!playing);
   };
 
+  const handleQuestionToggle = (
+    questionId: string,
+    segmentStart: number,
+    segmentEnd: number
+  ) => {
+    const isExpanding = expandedQuestionId !== questionId;
+    setExpandedQuestionId(isExpanding ? questionId : null);
+
+    if (isExpanding) {
+      const ws = wavesurferRef.current;
+      const wsRegions = regionsRef.current;
+      if (!ws || !wsRegions) return;
+
+      // Clear existing user selections (not question markers)
+      wsRegions.getRegions().forEach((r) => {
+        if (!r.id.startsWith('question-')) r.remove();
+      });
+
+      if (segmentStart !== segmentEnd) {
+        // Create a selection region for the question range
+        wsRegions.addRegion({
+          id: 'user-selection',
+          start: segmentStart,
+          end: segmentEnd,
+          color: 'rgba(0, 0, 0, 0.1)',
+          drag: true,
+          resize: true,
+        });
+        setSelection({ start: segmentStart, end: segmentEnd });
+      } else {
+        setSelection(null);
+      }
+
+      ws.setTime(segmentStart);
+    }
+  };
+
   // Logic to get passage info from context
   const bookCode = state.passage?.attributes?.book || '';
   const bookName =
@@ -309,7 +346,11 @@ export const NewPageContent = () => {
               segmentEnd={q.attributes.segmentEnd}
               expanded={expandedQuestionId === q.id}
               onToggle={() =>
-                setExpandedQuestionId(expandedQuestionId === q.id ? null : q.id)
+                handleQuestionToggle(
+                  q.id,
+                  q.attributes.segmentStart,
+                  q.attributes.segmentEnd
+                )
               }
               onPlay={() => {
                 // TODO: Implement playback
