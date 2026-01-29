@@ -33,6 +33,7 @@ export const NewPageContent = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const regionsRef = useRef<RegionsPlugin | null>(null);
+  const questionsRef = useRef<ReturnType<typeof usePassageQuestions>>([]);
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
   const [selection, setSelection] = React.useState<{
@@ -45,6 +46,14 @@ export const NewPageContent = () => {
     string | null
   >(null);
   const questions = usePassageQuestions(state.passage?.id);
+
+  // Tolerance in seconds for clicking near a question marker
+  const MARKER_CLICK_TOLERANCE_PX = 4;
+
+  // Keep questionsRef in sync
+  useEffect(() => {
+    questionsRef.current = questions;
+  }, [questions]);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -102,12 +111,37 @@ export const NewPageContent = () => {
       setPlaying(false);
     });
 
-    // Click outside clears selection
-    ws.on('click', () => {
-      wsRegions.getRegions().forEach((r) => {
-        if (r.start !== r.end) r.remove(); // Only remove selections, not markers
+    // Click on waveform: check if near a question marker
+    ws.on('click', (relativeX) => {
+      const waveformWidth = containerRef.current?.clientWidth || 1;
+      const audioDuration = ws.getDuration() || 1;
+      const clickTime = relativeX * audioDuration;
+      const toleranceSeconds =
+        (MARKER_CLICK_TOLERANCE_PX / waveformWidth) * audioDuration;
+
+      // Find if click is near any question marker
+      const clickedQuestion = questionsRef.current.find((q) => {
+        const markerTime = q.attributes.segmentStart;
+        return (
+          markerTime !== undefined &&
+          markerTime !== null &&
+          Math.abs(clickTime - markerTime) <= toleranceSeconds
+        );
       });
-      setSelection(null);
+
+      if (clickedQuestion) {
+        // Expand the clicked question
+        setExpandedQuestionId((prev) =>
+          prev === clickedQuestion.id ? null : clickedQuestion.id
+        );
+      } else {
+        // Click outside any marker: collapse all and clear selection
+        setExpandedQuestionId(null);
+        wsRegions.getRegions().forEach((r) => {
+          if (r.start !== r.end) r.remove();
+        });
+        setSelection(null);
+      }
     });
 
     return () => {
@@ -115,6 +149,41 @@ export const NewPageContent = () => {
       wavesurferRef.current = null;
     };
   }, []);
+
+  // Sync expanded question with Waveform selection
+  useEffect(() => {
+    const ws = wavesurferRef.current;
+    const wsRegions = regionsRef.current;
+    if (!ws || !wsRegions || !expandedQuestionId) return;
+
+    const q = questions.find((q) => q.id === expandedQuestionId);
+    if (!q) return;
+
+    const start = q.attributes.segmentStart;
+    const end = q.attributes.segmentEnd;
+    if (start === undefined || start === null) return;
+
+    // Clear existing user selections (not question markers)
+    wsRegions.getRegions().forEach((r) => {
+      if (!r.id.startsWith('question-')) r.remove();
+    });
+
+    if (start !== end) {
+      // Create a selection region for the question range
+      wsRegions.addRegion({
+        id: 'user-selection',
+        start,
+        end,
+        color: 'rgba(0, 0, 0, 0.1)',
+        drag: true,
+        resize: true,
+      });
+      setSelection({ start, end });
+    } else {
+      setSelection(null);
+    }
+    ws.setTime(start);
+  }, [expandedQuestionId, questions]);
 
   // Sync audio blob with WaveSurfer
   useEffect(() => {
@@ -167,41 +236,9 @@ export const NewPageContent = () => {
     setPlaying(!playing);
   };
 
-  const handleQuestionToggle = (
-    questionId: string,
-    segmentStart: number,
-    segmentEnd: number
-  ) => {
+  const handleQuestionToggle = (questionId: string) => {
     const isExpanding = expandedQuestionId !== questionId;
     setExpandedQuestionId(isExpanding ? questionId : null);
-
-    if (isExpanding) {
-      const ws = wavesurferRef.current;
-      const wsRegions = regionsRef.current;
-      if (!ws || !wsRegions) return;
-
-      // Clear existing user selections (not question markers)
-      wsRegions.getRegions().forEach((r) => {
-        if (!r.id.startsWith('question-')) r.remove();
-      });
-
-      if (segmentStart !== segmentEnd) {
-        // Create a selection region for the question range
-        wsRegions.addRegion({
-          id: 'user-selection',
-          start: segmentStart,
-          end: segmentEnd,
-          color: 'rgba(0, 0, 0, 0.1)',
-          drag: true,
-          resize: true,
-        });
-        setSelection({ start: segmentStart, end: segmentEnd });
-      } else {
-        setSelection(null);
-      }
-
-      ws.setTime(segmentStart);
-    }
   };
 
   // Logic to get passage info from context
@@ -350,13 +387,7 @@ export const NewPageContent = () => {
               segmentEnd={q.attributes.segmentEnd}
               audioPath={q.attributes.audioPath}
               expanded={expandedQuestionId === q.id}
-              onToggle={() =>
-                handleQuestionToggle(
-                  q.id,
-                  q.attributes.segmentStart,
-                  q.attributes.segmentEnd
-                )
-              }
+              onToggle={() => handleQuestionToggle(q.id)}
             />
           ))}
         </Box>

@@ -10,6 +10,7 @@ Defines the interaction between the audio waveform and question list on the Ques
 
 - A vertical marker is displayed at each question's start time.
 - Question markers are non-draggable and non-resizable.
+- Clicking in the waveform should collapse all question rows, unless the click is on a question marker (at the question start), in which case it would expand that question row.
 
 ### User Selection
 
