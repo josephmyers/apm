@@ -82,28 +82,29 @@ export const QuestionListItem = ({
         direction="row"
         alignItems="center"
         justifyContent="space-between"
-        onClick={onToggle}
+        onClick={expanded ? undefined : onToggle}
         sx={{
           p: 0,
           pl: 1,
-          cursor: 'pointer',
-          '&:hover': { bgcolor: '#f9f9f9' },
+          cursor: expanded ? 'default' : 'pointer',
+          '&:hover': { bgcolor: expanded ? 'transparent' : '#f9f9f9' },
         }}
       >
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {timeLabel}
         </Typography>
-        <IconButton
-          size="small"
-          aria-label={expanded ? 'collapse' : 'expand'}
-          sx={{
-            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s',
-            '&:hover': { bgcolor: 'transparent' },
-          }}
-        >
-          <ExpandMoreIcon />
-        </IconButton>
+        {!expanded && (
+          <IconButton
+            size="small"
+            aria-label="expand"
+            sx={{
+              transition: 'transform 0.2s',
+              '&:hover': { bgcolor: 'transparent' },
+            }}
+          >
+            <ExpandMoreIcon />
+          </IconButton>
+        )}
       </Stack>
 
       {/* Expanded Content */}

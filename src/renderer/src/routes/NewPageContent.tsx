@@ -400,39 +400,60 @@ export const NewPageContent = () => {
           />
         </Box>
 
-        <Box sx={{ mt: 3 }}>
-          {questions.map((q) => (
-            <QuestionListItem
-              key={q.id}
-              title={q.attributes.title}
-              speaker={q.attributes.speaker}
-              segmentStart={q.attributes.segmentStart}
-              segmentEnd={q.attributes.segmentEnd}
-              audioPath={q.attributes.audioPath}
-              expanded={expandedQuestionId === q.id}
-              onToggle={() => handleQuestionToggle(q.id)}
-            />
-          ))}
-        </Box>
+        <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column' }}>
+          {(() => {
+            // Calculate insertion index for Add Question button
+            const effectiveTime = selection?.start ?? currentTime;
+            let addQuestionIndex: number;
 
-        <Button
-          variant="contained"
-          fullWidth
-          onClick={() => setAddQuestionOpen(true)}
-          sx={{
-            bgcolor: '#333',
-            color: 'white',
-            textTransform: 'none',
-            mt: 2,
-            py: 1.5,
-            fontWeight: 600,
-            fontSize: '1rem',
-            '&:hover': { bgcolor: '#555' },
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          }}
-        >
-          + Add Question...
-        </Button>
+            if (expandedQuestionId) {
+              // If a question is expanded, place button right after it
+              addQuestionIndex =
+                questions.findIndex((q) => q.id === expandedQuestionId) + 1;
+            } else {
+              // Place based on chronological order (where effectiveTime falls)
+              addQuestionIndex = questions.findIndex((q) => {
+                const qTime = q.attributes.segmentStart ?? 0;
+                return qTime > effectiveTime;
+              });
+              if (addQuestionIndex === -1) {
+                addQuestionIndex = questions.length; // At the end
+              }
+            }
+
+            // Use CSS order to visually position items while keeping React tree stable
+            // Questions get order: 0, 2, 4, 6, ... (even numbers)
+            // Button gets order based on where it should appear (odd number between questions)
+            const buttonOrder = addQuestionIndex * 2 + 1;
+
+            return (
+              <>
+                {questions.map((q, index) => (
+                  <Box key={q.id} sx={{ order: index * 2 + 2 }}>
+                    <QuestionListItem
+                      title={q.attributes.title}
+                      speaker={q.attributes.speaker}
+                      segmentStart={q.attributes.segmentStart}
+                      segmentEnd={q.attributes.segmentEnd}
+                      audioPath={q.attributes.audioPath}
+                      expanded={expandedQuestionId === q.id}
+                      onToggle={() => handleQuestionToggle(q.id)}
+                    />
+                  </Box>
+                ))}
+                <Button
+                  key="add-question-btn"
+                  variant={expandedQuestionId ? undefined : 'primary'}
+                  fullWidth
+                  onClick={() => setAddQuestionOpen(true)}
+                  sx={{ order: buttonOrder }}
+                >
+                  + Add Question...
+                </Button>
+              </>
+            );
+          })()}
+        </Box>
 
         {questions.length === 0 && (
           <Typography

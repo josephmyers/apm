@@ -29,10 +29,14 @@ Defines the interaction between the audio waveform and question list on the Ques
 
 - Each question displays as a collapsible row showing the time label.
 - Only one row can be expanded at a time; expanding a row collapses any previously expanded row.
-- All rows can be collapsed.
+- It is not allowed to manually collapse the currently expanded row.
 
 ### Waveform Synchronization
 
 - Expanding a question row updates the waveform:
   - **Point segment** (start equals end): Moves the cursor to that time.
   - **Range segment** (start differs from end): Creates a selection spanning the question's start to end and moves the cursor to the start.
+
+### Add Question
+
+- The Add Question button should be placed within the question rows, according to where the play marker currently is. If the selection is a range, use the range's start. If the play marker has expanded a row, show Add Question just below that row.
