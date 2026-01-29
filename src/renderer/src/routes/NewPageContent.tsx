@@ -441,6 +441,11 @@ export const NewPageContent = () => {
           initialSelection={
             selection || { start: currentTime, end: currentTime }
           }
+          onQuestionCreated={(questionId) => {
+            setTimeout(() => {
+              setExpandedQuestionId(questionId);
+            }, 250);
+          }}
         />
       </Box>
 

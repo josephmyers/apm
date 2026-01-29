@@ -32,12 +32,14 @@ interface Props {
   open: boolean;
   onClose: () => void;
   initialSelection: { start: number; end: number };
+  onQuestionCreated?: (questionId: string) => void;
 }
 
 export const AddQuestionDialog = ({
   open,
   onClose,
   initialSelection,
+  onQuestionCreated,
 }: Props) => {
   const { state } = useContext(PassageDetailContext);
   const passageContainerRef = useRef<HTMLDivElement>(null);
@@ -247,7 +249,7 @@ export const AddQuestionDialog = ({
     const response = await fetch(questionAudioUrl);
     const blob = await response.blob();
 
-    await createQuestion({
+    const newQuestion = await createQuestion({
       passageId: state.passage?.id || '',
       mediafileId: state.mediafileId || '',
       title: questionTitle,
@@ -259,6 +261,10 @@ export const AddQuestionDialog = ({
     });
 
     onClose();
+
+    if (onQuestionCreated && newQuestion?.id) {
+      onQuestionCreated(newQuestion.id);
+    }
   };
 
   return (
