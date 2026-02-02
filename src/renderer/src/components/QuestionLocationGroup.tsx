@@ -13,12 +13,20 @@ import PauseIcon from '@mui/icons-material/Pause';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Memory from '@orbit/memory';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from '@hello-pangea/dnd';
 import { formatTime } from '../control/formatTime';
 import { loadBlobAsync } from '../utils/loadBlob';
 import { AddQuestionDialog } from './AddQuestionDialog';
 import Confirm from './AlertDialog';
 import { useGlobal } from '../context/useGlobal';
+import { usePassageQuestionReorder } from '../crud/usePassageQuestionReorder';
 
 export interface QuestionData {
   questionId: string;
@@ -28,14 +36,12 @@ export interface QuestionData {
   duration: number;
 }
 
-interface Props {
+interface QuestionItemProps {
+  question: QuestionData;
   segmentStart: number;
   segmentEnd: number;
-  questions: QuestionData[];
-  expanded: boolean;
-  onToggle?: () => void;
-  onQuestionUpdated?: (questionId: string) => void;
-  onQuestionDeleted?: (questionId: string) => void;
+  showDragHandle: boolean;
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 }
 
 /**
@@ -46,15 +52,9 @@ const QuestionItem = ({
   question,
   segmentStart,
   segmentEnd,
-  onQuestionUpdated,
-  onQuestionDeleted,
-}: {
-  question: QuestionData;
-  segmentStart: number;
-  segmentEnd: number;
-  onQuestionUpdated?: (questionId: string) => void;
-  onQuestionDeleted?: (questionId: string) => void;
-}) => {
+  showDragHandle,
+  dragHandleProps,
+}: QuestionItemProps) => {
   const [coordinator] = useGlobal('coordinator');
   const memory = coordinator?.getSource('memory') as Memory;
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -110,7 +110,6 @@ const QuestionItem = ({
       await memory.update((t) =>
         t.removeRecord({ type: 'passagequestion', id: confirmDeleteId })
       );
-      onQuestionDeleted?.(confirmDeleteId);
     } catch (err) {
       console.error('Failed to delete question:', err);
     } finally {
@@ -133,6 +132,21 @@ const QuestionItem = ({
         />
       )}
       <Stack direction="row" alignItems="center" spacing={2} sx={{ py: 1 }}>
+        {showDragHandle && (
+          <Box
+            {...dragHandleProps}
+            sx={{
+              cursor: 'grab',
+              display: 'flex',
+              alignItems: 'center',
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary' },
+            }}
+            aria-label="drag to reorder"
+          >
+            <DragIndicatorIcon />
+          </Box>
+        )}
         <IconButton
           onClick={handlePlayPause}
           sx={{ bgcolor: '#f5f5f5' }}
@@ -174,7 +188,6 @@ const QuestionItem = ({
         initialDuration={question.duration}
         onQuestionUpdated={(id) => {
           setEditDialogOpen(false);
-          onQuestionUpdated?.(id);
         }}
       />
 
@@ -190,9 +203,18 @@ const QuestionItem = ({
   );
 };
 
+interface QuestionGroupProps {
+  segmentStart: number;
+  segmentEnd: number;
+  questions: QuestionData[];
+  expanded: boolean;
+  onToggle?: () => void;
+}
+
 /**
  * Groups multiple questions at the same time location into a single
- * expand/collapse row.
+ * expand/collapse row. Supports drag-and-drop reordering when there
+ * are multiple questions.
  */
 export const QuestionLocationGroup = ({
   segmentStart,
@@ -200,15 +222,46 @@ export const QuestionLocationGroup = ({
   questions,
   expanded,
   onToggle,
-  onQuestionUpdated,
-  onQuestionDeleted,
-}: Props) => {
+}: QuestionGroupProps) => {
+  const { reorderQuestions } = usePassageQuestionReorder();
+
   const timeLabel =
     segmentStart === segmentEnd
       ? formatTime(segmentStart)
       : `${formatTime(segmentStart)} - ${formatTime(segmentEnd)}`;
 
   const questionCount = questions.length;
+  const showDragHandles = questionCount > 1;
+
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
+
+    // Reorder the questions array
+    const reorderedIds = Array.from(questions.map((q) => q.questionId));
+    const [removed] = reorderedIds.splice(result.source.index, 1);
+    reorderedIds.splice(result.destination.index, 0, removed);
+
+    // Persist the new order
+    await reorderQuestions(reorderedIds);
+  };
+
+  const renderQuestionItem = (
+    q: QuestionData,
+    index: number,
+    dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
+  ) => (
+    <React.Fragment key={q.questionId}>
+      {index > 0 && <Divider sx={{ my: 1 }} />}
+      <QuestionItem
+        question={q}
+        segmentStart={segmentStart}
+        segmentEnd={segmentEnd}
+        showDragHandle={showDragHandles}
+        dragHandleProps={dragHandleProps}
+      />
+    </React.Fragment>
+  );
 
   return (
     <Box
@@ -263,18 +316,42 @@ export const QuestionLocationGroup = ({
       {/* Expanded Content */}
       <Collapse in={expanded}>
         <Box sx={{ p: 0, pt: 0 }}>
-          {questions.map((q, index) => (
-            <React.Fragment key={q.questionId}>
-              {index > 0 && <Divider sx={{ my: 1 }} />}
-              <QuestionItem
-                question={q}
-                segmentStart={segmentStart}
-                segmentEnd={segmentEnd}
-                onQuestionUpdated={onQuestionUpdated}
-                onQuestionDeleted={onQuestionDeleted}
-              />
-            </React.Fragment>
-          ))}
+          {showDragHandles ? (
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable
+                droppableId={`questions-${segmentStart}-${segmentEnd}`}
+              >
+                {(provided) => (
+                  <Box ref={provided.innerRef} {...provided.droppableProps}>
+                    {questions.map((q, index) => (
+                      <Draggable
+                        key={q.questionId}
+                        draggableId={q.questionId}
+                        index={index}
+                      >
+                        {(provided) => (
+                          <Box
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                          >
+                            {renderQuestionItem(
+                              q,
+                              index,
+                              provided.dragHandleProps ?? undefined
+                            )}
+                          </Box>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </Box>
+                )}
+              </Droppable>
+            </DragDropContext>
+          ) : (
+            // Single question - no drag-drop needed
+            questions.map((q, index) => renderQuestionItem(q, index))
+          )}
         </Box>
       </Collapse>
     </Box>

@@ -41,7 +41,30 @@ export const usePassageQuestionCreate = () => {
       audioPath = URL.createObjectURL(props.audioBlob);
     }
 
-    // 2. Create Orbit record
+    // 2. Calculate next sequencenum for questions at the same time location
+    const existingQuestions = memory.cache.query((q) =>
+      q.findRecords('passagequestion')
+    ) as PassageQuestionD[];
+
+    const questionsAtSameLocation = existingQuestions.filter((q) => {
+      const passageData = q.relationships?.passage?.data;
+      const passageId = Array.isArray(passageData)
+        ? passageData[0]?.id
+        : (passageData as { id: string })?.id;
+
+      return (
+        passageId === props.passageId &&
+        q.attributes.segmentStart === props.segmentStart &&
+        q.attributes.segmentEnd === props.segmentEnd
+      );
+    });
+
+    const maxSequenceNum = questionsAtSameLocation.reduce(
+      (max, q) => Math.max(max, q.attributes.sequencenum || 0),
+      0
+    );
+
+    // 3. Create Orbit record
     const newQuestion: PassageQuestion = {
       type: 'passagequestion',
       attributes: {
@@ -51,7 +74,7 @@ export const usePassageQuestionCreate = () => {
         segmentEnd: props.segmentEnd,
         audioPath: audioPath,
         duration: props.duration,
-        sequencenum: 1, // Logic for sequence number could be improved later
+        sequencenum: maxSequenceNum + 1,
         dateCreated: new Date().toISOString(),
         dateUpdated: new Date().toISOString(),
         lastModifiedBy: user ? parseInt(user) : -1,
