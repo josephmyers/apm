@@ -276,19 +276,25 @@ export const NewPageContent = () => {
       if (r.id.startsWith('question-')) r.remove();
     });
 
-    // Add markers for each question at segmentStart
-    questions.forEach((q, index) => {
+    // Get unique segmentStart locations
+    const uniqueLocations = new Set<number>();
+    questions.forEach((q) => {
       const time = q.attributes.segmentStart;
       if (time !== undefined && time !== null) {
-        wsRegions.addRegion({
-          id: `question-${index}`,
-          start: time,
-          end: time,
-          color: 'rgba(0, 0, 0, 0.5)',
-          drag: false,
-          resize: false,
-        });
+        uniqueLocations.add(time);
       }
+    });
+
+    // Add one marker per unique location
+    Array.from(uniqueLocations).forEach((time, index) => {
+      wsRegions.addRegion({
+        id: `question-${index}`,
+        start: time,
+        end: time,
+        color: 'rgba(0, 0, 0, 0.5)',
+        drag: false,
+        resize: false,
+      });
     });
   }, [questions, duration]); //depending on duration refreshes when WS loads
 
