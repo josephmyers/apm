@@ -41,6 +41,9 @@ export const usePassageQuestionCreate = () => {
       audioPath = URL.createObjectURL(props.audioBlob);
     }
 
+    const segmentStart = Math.floor(props.segmentStart);
+    const segmentEnd = Math.floor(props.segmentEnd);
+
     // 2. Calculate next sequencenum for questions at the same time location
     const existingQuestions = memory.cache.query((q) =>
       q.findRecords('passagequestion')
@@ -54,8 +57,8 @@ export const usePassageQuestionCreate = () => {
 
       return (
         passageId === props.passageId &&
-        q.attributes.segmentStart === props.segmentStart &&
-        q.attributes.segmentEnd === props.segmentEnd
+        q.attributes.segmentStart === segmentStart &&
+        q.attributes.segmentEnd === segmentEnd
       );
     });
 
@@ -70,8 +73,8 @@ export const usePassageQuestionCreate = () => {
       attributes: {
         title: props.title,
         speaker: props.speaker,
-        segmentStart: props.segmentStart,
-        segmentEnd: props.segmentEnd,
+        segmentStart: segmentStart,
+        segmentEnd: segmentEnd,
         audioPath: audioPath,
         duration: props.duration,
         sequencenum: maxSequenceNum + 1,

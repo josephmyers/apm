@@ -61,8 +61,13 @@ export const usePassageQuestionUpdate = () => {
         audioPath,
         duration,
         segmentStart:
-          props.segmentStart ?? existingQuestion.attributes.segmentStart,
-        segmentEnd: props.segmentEnd ?? existingQuestion.attributes.segmentEnd,
+          props.segmentStart !== undefined
+            ? Math.floor(props.segmentStart)
+            : existingQuestion.attributes.segmentStart,
+        segmentEnd:
+          props.segmentEnd !== undefined
+            ? Math.floor(props.segmentEnd)
+            : existingQuestion.attributes.segmentEnd,
         dateUpdated: new Date().toISOString(),
         lastModifiedBy: user ? parseInt(user) : -1,
       },
