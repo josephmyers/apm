@@ -28,6 +28,7 @@ import {
   QuestionLocationGroup,
   QuestionData,
 } from '../components/QuestionLocationGroup';
+import { PassageQuestionD } from '../model';
 
 export const NewPageContent = () => {
   const navigate = useMyNavigate();
@@ -319,6 +320,20 @@ export const NewPageContent = () => {
     setExpandedGroupKey(isExpanding ? groupKey : null);
   };
 
+  const handleQuestionUpdated = (question: PassageQuestionD) => {
+    // Update the waveform selection to the new location
+    const newStart = question.attributes.segmentStart;
+    const newEnd = question.attributes.segmentEnd;
+    const newGroupKey = `${newStart}-${newEnd}`;
+    setExpandedGroupKey(newGroupKey);
+
+    if (newStart !== newEnd) {
+      setSelection({ start: newStart, end: newEnd });
+    } else {
+      setSelection(null);
+    }
+  };
+
   // Logic to get passage info from context
   const bookCode = state.passage?.attributes?.book || '';
   const bookName =
@@ -507,6 +522,7 @@ export const NewPageContent = () => {
                         questions={questionData}
                         expanded={expandedGroupKey === groupKey}
                         onToggle={() => handleGroupToggle(groupKey)}
+                        onQuestionUpdated={handleQuestionUpdated}
                       />
                     </Box>
                   );
@@ -555,13 +571,9 @@ export const NewPageContent = () => {
           initialSelection={
             selection || { start: currentTime, end: currentTime }
           }
-          onQuestionCreated={(questionId) => {
+          onQuestionCreated={(question) => {
             setTimeout(() => {
-              // Find the group key for the newly created question
-              const groupKey = getGroupKeyForQuestion(questionId);
-              if (groupKey) {
-                setExpandedGroupKey(groupKey);
-              }
+              handleQuestionUpdated(question)
             }, 250);
           }}
         />

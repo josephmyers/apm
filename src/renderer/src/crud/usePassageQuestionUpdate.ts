@@ -8,6 +8,8 @@ interface UpdateQuestionProps {
   speaker: string;
   audioBlob?: Blob; // Optional - only provided if audio changed
   duration?: number;
+  segmentStart?: number;
+  segmentEnd?: number;
 }
 
 export const usePassageQuestionUpdate = () => {
@@ -58,6 +60,9 @@ export const usePassageQuestionUpdate = () => {
         speaker: props.speaker,
         audioPath,
         duration,
+        segmentStart:
+          props.segmentStart ?? existingQuestion.attributes.segmentStart,
+        segmentEnd: props.segmentEnd ?? existingQuestion.attributes.segmentEnd,
         dateUpdated: new Date().toISOString(),
         lastModifiedBy: user ? parseInt(user) : -1,
       },

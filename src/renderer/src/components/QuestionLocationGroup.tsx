@@ -27,6 +27,7 @@ import { AddQuestionDialog } from './AddQuestionDialog';
 import Confirm from './AlertDialog';
 import { useGlobal } from '../context/useGlobal';
 import { usePassageQuestionReorder } from '../crud/usePassageQuestionReorder';
+import { PassageQuestionD } from '../model';
 
 export interface QuestionData {
   questionId: string;
@@ -42,6 +43,7 @@ interface QuestionItemProps {
   segmentEnd: number;
   showDragHandle: boolean;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+  onQuestionUpdated?: (question: PassageQuestionD) => void;
 }
 
 /**
@@ -54,6 +56,7 @@ const QuestionItem = ({
   segmentEnd,
   showDragHandle,
   dragHandleProps,
+  onQuestionUpdated,
 }: QuestionItemProps) => {
   const [coordinator] = useGlobal('coordinator');
   const memory = coordinator?.getSource('memory') as Memory;
@@ -186,8 +189,11 @@ const QuestionItem = ({
         initialSpeaker={question.speaker}
         initialAudioPath={question.audioPath}
         initialDuration={question.duration}
-        onQuestionUpdated={(id) => {
+        onQuestionUpdated={(updatedQuestion) => {
           setEditDialogOpen(false);
+          if (onQuestionUpdated) {
+            onQuestionUpdated(updatedQuestion);
+          }
         }}
       />
 
@@ -209,6 +215,7 @@ interface QuestionGroupProps {
   questions: QuestionData[];
   expanded: boolean;
   onToggle?: () => void;
+  onQuestionUpdated?: (question: PassageQuestionD) => void;
 }
 
 /**
@@ -222,6 +229,7 @@ export const QuestionLocationGroup = ({
   questions,
   expanded,
   onToggle,
+  onQuestionUpdated,
 }: QuestionGroupProps) => {
   const { reorderQuestions } = usePassageQuestionReorder();
 
@@ -259,6 +267,7 @@ export const QuestionLocationGroup = ({
         segmentEnd={segmentEnd}
         showDragHandle={showDragHandles}
         dragHandleProps={dragHandleProps}
+        onQuestionUpdated={onQuestionUpdated}
       />
     </React.Fragment>
   );

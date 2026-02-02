@@ -29,13 +29,14 @@ import { useWavRecorder } from '../crud/useWavRecorder';
 import { usePassageQuestionCreate } from '../crud/usePassageQuestionCreate';
 import { usePassageQuestionUpdate } from '../crud/usePassageQuestionUpdate';
 import { loadBlobAsync } from '../utils/loadBlob';
+import { PassageQuestionD } from '../model';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   initialSelection: { start: number; end: number };
-  onQuestionCreated?: (questionId: string) => void;
-  onQuestionUpdated?: (questionId: string) => void;
+  onQuestionCreated?: (question: PassageQuestionD) => void;
+  onQuestionUpdated?: (question: PassageQuestionD) => void;
   questionId?: string;
   initialTitle?: string;
   initialSpeaker?: string;
@@ -80,6 +81,13 @@ export const AddQuestionDialog = ({
   const [questionTime, setQuestionTime] = useState(0);
   const [questionDuration, setQuestionDuration] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [currentSelection, setCurrentSelection] = useState(initialSelection);
+
+  useEffect(() => {
+    if (open) {
+      setCurrentSelection(initialSelection);
+    }
+  }, [open, initialSelection]);
 
   const handleRecordingStop = useCallback(
     (blob: Blob) => {
@@ -138,6 +146,10 @@ export const AddQuestionDialog = ({
       // Force sync to the selection start
       ws.setTime(initialSelection.start);
       setPassageTime(initialSelection.start);
+    });
+
+    wsRegions.on('region-updated', (region) => {
+      setCurrentSelection({ start: region.start, end: region.end });
     });
 
     ws.on('timeupdate', (time) => setPassageTime(time));
@@ -295,6 +307,9 @@ export const AddQuestionDialog = ({
   const handleContinue = async () => {
     if (!questionAudioUrl) return;
 
+    const isRange = initialSelection.start !== initialSelection.end;
+    const finalStart = isRange ? currentSelection.start : passageTime;
+    const finalEnd = isRange ? currentSelection.end : passageTime;
     if (isEditMode && questionId) {
       // Edit mode: update existing question
       let audioBlob: Blob | undefined;
@@ -309,12 +324,14 @@ export const AddQuestionDialog = ({
         speaker: speaker,
         audioBlob,
         duration: audioChanged ? questionDuration : undefined,
+        segmentStart: finalStart,
+        segmentEnd: finalEnd,
       });
 
       onClose();
 
-      if (onQuestionUpdated && updatedQuestion?.id) {
-        onQuestionUpdated(updatedQuestion.id);
+      if (onQuestionUpdated && updatedQuestion) {
+        onQuestionUpdated(updatedQuestion);
       }
     } else {
       // Create mode: create new question
@@ -326,8 +343,8 @@ export const AddQuestionDialog = ({
         mediafileId: state.mediafileId || '',
         title: questionTitle,
         speaker: speaker,
-        segmentStart: initialSelection.start,
-        segmentEnd: initialSelection.end,
+        segmentStart: finalStart,
+        segmentEnd: finalEnd,
         audioBlob: blob,
         duration: questionDuration,
       });
@@ -335,7 +352,7 @@ export const AddQuestionDialog = ({
       onClose();
 
       if (onQuestionCreated && newQuestion?.id) {
-        onQuestionCreated(newQuestion.id);
+        onQuestionCreated(newQuestion);
       }
     }
   };
@@ -384,7 +401,7 @@ export const AddQuestionDialog = ({
             </IconButton>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
               {initialSelection.start !== initialSelection.end
-                ? `${formatTime(initialSelection.start)} - ${formatTime(initialSelection.end)}`
+                ? `${formatTime(currentSelection.start)} - ${formatTime(currentSelection.end)}`
                 : formatTime(passageTime)}{' '}
               / {formatTime(passageDuration)}
             </Typography>
