@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useMemo, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import {
@@ -24,7 +24,10 @@ import { formatTime } from '../control/formatTime';
 import { PassageDetailContext } from '../context/PassageDetailContext';
 import { AddQuestionDialog } from '../components/AddQuestionDialog';
 import { usePassageQuestions } from '../crud/usePassageQuestions';
-import { QuestionListItem } from '../components/QuestionListItem';
+import {
+  QuestionLocationGroup,
+  QuestionData,
+} from '../components/QuestionLocationGroup';
 
 export const NewPageContent = () => {
   const navigate = useMyNavigate();
@@ -43,10 +46,45 @@ export const NewPageContent = () => {
   } | null>(null);
   const [playing, setPlaying] = React.useState(false);
   const [addQuestionOpen, setAddQuestionOpen] = React.useState(false);
-  const [expandedQuestionId, setExpandedQuestionId] = React.useState<
-    string | null
-  >(null);
+  // Group key is "start-end" to identify unique time locations
+  const [expandedGroupKey, setExpandedGroupKey] = React.useState<string | null>(
+    null
+  );
   const questions = usePassageQuestions(state.passage?.id);
+
+  // Group questions by matching both start and end times
+  const groupedQuestions = useMemo(() => {
+    const groups = new Map<
+      string,
+      { segmentStart: number; segmentEnd: number; questions: typeof questions }
+    >();
+
+    questions.forEach((q) => {
+      const start = q.attributes.segmentStart ?? 0;
+      const end = q.attributes.segmentEnd ?? start;
+      const key = `${start}-${end}`;
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          segmentStart: start,
+          segmentEnd: end,
+          questions: [],
+        });
+      }
+      groups.get(key)!.questions.push(q);
+    });
+
+    // Convert to array sorted by start time
+    return Array.from(groups.values()).sort(
+      (a, b) => a.segmentStart - b.segmentStart
+    );
+  }, [questions]);
+
+  // Ref for groupedQuestions to use in event handlers
+  const groupedQuestionsRef = useRef(groupedQuestions);
+  useEffect(() => {
+    groupedQuestionsRef.current = groupedQuestions;
+  }, [groupedQuestions]);
 
   // Tolerance in seconds for clicking near a question marker
   const MARKER_CLICK_TOLERANCE_PX = 4;
@@ -60,6 +98,15 @@ export const NewPageContent = () => {
   useEffect(() => {
     selectionRef.current = selection;
   }, [selection]);
+
+  // Helper to get group key from a question
+  const getGroupKeyForQuestion = (questionId: string): string | null => {
+    const q = questions.find((q) => q.id === questionId);
+    if (!q) return null;
+    const start = q.attributes.segmentStart ?? 0;
+    const end = q.attributes.segmentEnd ?? start;
+    return `${start}-${end}`;
+  };
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -103,7 +150,7 @@ export const NewPageContent = () => {
       ws.setTime(region.start);
 
       // Creating a region collapses all question rows
-      setExpandedQuestionId(null);
+      setExpandedGroupKey(null);
     });
 
     wsRegions.on('region-updated', (region) => {
@@ -111,7 +158,7 @@ export const NewPageContent = () => {
       ws.setTime(region.start);
 
       // Updating a region collapses all question rows (user dragged/resized)
-      setExpandedQuestionId(null);
+      setExpandedGroupKey(null);
     });
 
     wsRegions.on('region-clicked', (region, e) => {
@@ -153,13 +200,14 @@ export const NewPageContent = () => {
       });
 
       if (clickedQuestion) {
-        // Expand the clicked question
-        setExpandedQuestionId((prev) =>
-          prev === clickedQuestion.id ? null : clickedQuestion.id
-        );
+        // Expand the group containing the clicked question
+        const start = clickedQuestion.attributes.segmentStart ?? 0;
+        const end = clickedQuestion.attributes.segmentEnd ?? start;
+        const groupKey = `${start}-${end}`;
+        setExpandedGroupKey((prev) => (prev === groupKey ? null : groupKey));
       } else {
         // Click outside any marker: collapse all and clear selection
-        setExpandedQuestionId(null);
+        setExpandedGroupKey(null);
         wsRegions.getRegions().forEach((r) => {
           if (r.start !== r.end) r.remove();
         });
@@ -173,18 +221,19 @@ export const NewPageContent = () => {
     };
   }, []);
 
-  // Sync expanded question with Waveform selection
+  // Sync expanded group with Waveform selection
   useEffect(() => {
     const ws = wavesurferRef.current;
     const wsRegions = regionsRef.current;
-    if (!ws || !wsRegions || !expandedQuestionId) return;
+    if (!ws || !wsRegions || !expandedGroupKey) return;
 
-    const q = questions.find((q) => q.id === expandedQuestionId);
-    if (!q) return;
+    const group = groupedQuestions.find(
+      (g) => `${g.segmentStart}-${g.segmentEnd}` === expandedGroupKey
+    );
+    if (!group) return;
 
-    const start = q.attributes.segmentStart;
-    const end = q.attributes.segmentEnd;
-    if (start === undefined || start === null) return;
+    const start = group.segmentStart;
+    const end = group.segmentEnd;
 
     // Clear existing user selections (not question markers)
     wsRegions.getRegions().forEach((r) => {
@@ -192,7 +241,7 @@ export const NewPageContent = () => {
     });
 
     if (start !== end) {
-      // Create a selection region for the question range
+      // Create a selection region for the group range
       wsRegions.addRegion({
         id: 'user-selection',
         start,
@@ -206,7 +255,7 @@ export const NewPageContent = () => {
       setSelection(null);
     }
     ws.setTime(start);
-  }, [expandedQuestionId, questions]);
+  }, [expandedGroupKey, groupedQuestions]);
 
   // Sync audio blob with WaveSurfer
   useEffect(() => {
@@ -259,9 +308,9 @@ export const NewPageContent = () => {
     setPlaying(!playing);
   };
 
-  const handleQuestionToggle = (questionId: string) => {
-    const isExpanding = expandedQuestionId !== questionId;
-    setExpandedQuestionId(isExpanding ? questionId : null);
+  const handleGroupToggle = (groupKey: string) => {
+    const isExpanding = expandedGroupKey !== groupKey;
+    setExpandedGroupKey(isExpanding ? groupKey : null);
   };
 
   // Logic to get passage info from context
@@ -406,46 +455,59 @@ export const NewPageContent = () => {
             const effectiveTime = selection?.start ?? currentTime;
             let addQuestionIndex: number;
 
-            if (expandedQuestionId) {
-              // If a question is expanded, place button right after it
+            if (expandedGroupKey) {
+              // If a group is expanded, place button right after it
               addQuestionIndex =
-                questions.findIndex((q) => q.id === expandedQuestionId) + 1;
+                groupedQuestions.findIndex(
+                  (g) =>
+                    `${g.segmentStart}-${g.segmentEnd}` === expandedGroupKey
+                ) + 1;
             } else {
               // Place based on chronological order (where effectiveTime falls)
-              addQuestionIndex = questions.findIndex((q) => {
-                const qTime = q.attributes.segmentStart ?? 0;
-                return qTime > effectiveTime;
-              });
+              addQuestionIndex = groupedQuestions.findIndex(
+                (g) => g.segmentStart > effectiveTime
+              );
               if (addQuestionIndex === -1) {
-                addQuestionIndex = questions.length; // At the end
+                addQuestionIndex = groupedQuestions.length; // At the end
               }
             }
 
             // Use CSS order to visually position items while keeping React tree stable
-            // Questions get order: 0, 2, 4, 6, ... (even numbers)
-            // Button gets order based on where it should appear (odd number between questions)
+            // Groups get order: 0, 2, 4, 6, ... (even numbers)
+            // Button gets order based on where it should appear (odd number between groups)
             const buttonOrder = addQuestionIndex * 2 + 1;
 
             return (
               <>
-                {questions.map((q, index) => (
-                  <Box key={q.id} sx={{ order: index * 2 + 2, my: '1px' }}>
-                    <QuestionListItem
-                      questionId={q.id}
-                      title={q.attributes.title}
-                      speaker={q.attributes.speaker}
-                      segmentStart={q.attributes.segmentStart}
-                      segmentEnd={q.attributes.segmentEnd}
-                      audioPath={q.attributes.audioPath}
-                      duration={q.attributes.duration}
-                      expanded={expandedQuestionId === q.id}
-                      onToggle={() => handleQuestionToggle(q.id)}
-                    />
-                  </Box>
-                ))}
+                {groupedQuestions.map((group, index) => {
+                  const groupKey = `${group.segmentStart}-${group.segmentEnd}`;
+                  const questionData: QuestionData[] = group.questions.map(
+                    (q) => ({
+                      questionId: q.id,
+                      title: q.attributes.title,
+                      speaker: q.attributes.speaker,
+                      audioPath: q.attributes.audioPath,
+                      duration: q.attributes.duration,
+                    })
+                  );
+                  return (
+                    <Box
+                      key={groupKey}
+                      sx={{ order: index * 2 + 2, my: '1px' }}
+                    >
+                      <QuestionLocationGroup
+                        segmentStart={group.segmentStart}
+                        segmentEnd={group.segmentEnd}
+                        questions={questionData}
+                        expanded={expandedGroupKey === groupKey}
+                        onToggle={() => handleGroupToggle(groupKey)}
+                      />
+                    </Box>
+                  );
+                })}
                 <Button
                   key="add-question-btn"
-                  variant={expandedQuestionId ? undefined : 'primary'}
+                  variant={expandedGroupKey ? undefined : 'primary'}
                   fullWidth
                   onClick={() => setAddQuestionOpen(true)}
                   sx={{ order: buttonOrder, my: '4px' }}
@@ -489,7 +551,11 @@ export const NewPageContent = () => {
           }
           onQuestionCreated={(questionId) => {
             setTimeout(() => {
-              setExpandedQuestionId(questionId);
+              // Find the group key for the newly created question
+              const groupKey = getGroupKeyForQuestion(questionId);
+              if (groupKey) {
+                setExpandedGroupKey(groupKey);
+              }
             }, 250);
           }}
         />
