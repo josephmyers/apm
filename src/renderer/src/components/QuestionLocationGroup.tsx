@@ -12,9 +12,13 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Memory from '@orbit/memory';
 import { formatTime } from '../control/formatTime';
 import { loadBlobAsync } from '../utils/loadBlob';
 import { AddQuestionDialog } from './AddQuestionDialog';
+import Confirm from './AlertDialog';
+import { useGlobal } from '../context/useGlobal';
 
 export interface QuestionData {
   questionId: string;
@@ -31,6 +35,7 @@ interface Props {
   expanded: boolean;
   onToggle?: () => void;
   onQuestionUpdated?: (questionId: string) => void;
+  onQuestionDeleted?: (questionId: string) => void;
 }
 
 /**
@@ -42,16 +47,21 @@ const QuestionItem = ({
   segmentStart,
   segmentEnd,
   onQuestionUpdated,
+  onQuestionDeleted,
 }: {
   question: QuestionData;
   segmentStart: number;
   segmentEnd: number;
   onQuestionUpdated?: (questionId: string) => void;
+  onQuestionDeleted?: (questionId: string) => void;
 }) => {
+  const [coordinator] = useGlobal('coordinator');
+  const memory = coordinator?.getSource('memory') as Memory;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | undefined>(undefined);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Load the audio blob when audioPath changes
   useEffect(() => {
@@ -90,6 +100,28 @@ const QuestionItem = ({
     setIsPlaying(!isPlaying);
   };
 
+  const handleDeleteClick = () => {
+    setConfirmDeleteId(question.questionId);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!confirmDeleteId || !memory) return;
+    try {
+      await memory.update((t) =>
+        t.removeRecord({ type: 'passagequestion', id: confirmDeleteId })
+      );
+      onQuestionDeleted?.(confirmDeleteId);
+    } catch (err) {
+      console.error('Failed to delete question:', err);
+    } finally {
+      setConfirmDeleteId(null);
+    }
+  };
+
+  const handleDeleteRefused = () => {
+    setConfirmDeleteId(null);
+  };
+
   return (
     <Box>
       {audioSrc && (
@@ -122,10 +154,11 @@ const QuestionItem = ({
         <Button
           startIcon={<EditIcon />}
           onClick={() => setEditDialogOpen(true)}
-          size="small"
-          sx={{ ml: 1 }}
         >
           Edit
+        </Button>
+        <Button startIcon={<DeleteIcon />} onClick={handleDeleteClick}>
+          Delete
         </Button>
       </Stack>
 
@@ -144,6 +177,15 @@ const QuestionItem = ({
           onQuestionUpdated?.(id);
         }}
       />
+
+      {/* Delete Confirmation Dialog */}
+      {confirmDeleteId && (
+        <Confirm
+          text="Are you sure you want to delete this question?"
+          yesResponse={handleDeleteConfirmed}
+          noResponse={handleDeleteRefused}
+        />
+      )}
     </Box>
   );
 };
@@ -159,6 +201,7 @@ export const QuestionLocationGroup = ({
   expanded,
   onToggle,
   onQuestionUpdated,
+  onQuestionDeleted,
 }: Props) => {
   const timeLabel =
     segmentStart === segmentEnd
@@ -228,6 +271,7 @@ export const QuestionLocationGroup = ({
                 segmentStart={segmentStart}
                 segmentEnd={segmentEnd}
                 onQuestionUpdated={onQuestionUpdated}
+                onQuestionDeleted={onQuestionDeleted}
               />
             </React.Fragment>
           ))}
