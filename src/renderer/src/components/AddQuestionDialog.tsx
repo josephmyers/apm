@@ -59,6 +59,7 @@ export const AddQuestionDialog = ({
   const { state } = useContext(PassageDetailContext);
   const passageContainerRef = useRef<HTMLDivElement>(null);
   const passageWsRef = useRef<WaveSurfer | null>(null);
+  const regionsRef = useRef<RegionsPlugin | null>(null);
   const audioUrlRef = useRef<string | null>(null);
 
   const questionContainerRef = useRef<HTMLDivElement>(null);
@@ -82,10 +83,14 @@ export const AddQuestionDialog = ({
   const [questionDuration, setQuestionDuration] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [currentSelection, setCurrentSelection] = useState(initialSelection);
+  const [locationMarker, setLocationMarker] = useState<number>(
+    initialSelection.start
+  );
 
   useEffect(() => {
     if (open) {
       setCurrentSelection(initialSelection);
+      setLocationMarker(initialSelection.start);
     }
   }, [open, initialSelection]);
 
@@ -115,6 +120,8 @@ export const AddQuestionDialog = ({
     if (!passageContainerRef.current) return;
 
     const wsRegions = RegionsPlugin.create();
+    regionsRef.current = wsRegions;
+
     const ws = WaveSurfer.create({
       container: passageContainerRef.current,
       waveColor: '#9fc5e8',
@@ -141,6 +148,15 @@ export const AddQuestionDialog = ({
           drag: true,
           resize: true,
         });
+      } else {
+        wsRegions.addRegion({
+          id: 'location-marker',
+          start: initialSelection.start,
+          end: initialSelection.start,
+          color: 'rgba(0, 0, 0, 0.5)',
+          drag: true,
+          resize: false,
+        });
       }
 
       // Force sync to the selection start
@@ -149,7 +165,11 @@ export const AddQuestionDialog = ({
     });
 
     wsRegions.on('region-updated', (region) => {
-      setCurrentSelection({ start: region.start, end: region.end });
+      if (region.id === 'location-marker') {
+        setLocationMarker(region.start);
+      } else {
+        setCurrentSelection({ start: region.start, end: region.end });
+      }
     });
 
     ws.on('timeupdate', (time) => setPassageTime(time));
@@ -308,8 +328,8 @@ export const AddQuestionDialog = ({
     if (!questionAudioUrl) return;
 
     const isRange = initialSelection.start !== initialSelection.end;
-    const finalStart = isRange ? currentSelection.start : passageTime;
-    const finalEnd = isRange ? currentSelection.end : passageTime;
+    const finalStart = isRange ? currentSelection.start : locationMarker;
+    const finalEnd = isRange ? currentSelection.end : locationMarker;
     if (isEditMode && questionId) {
       // Edit mode: update existing question
       let audioBlob: Blob | undefined;
@@ -402,7 +422,7 @@ export const AddQuestionDialog = ({
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
               {initialSelection.start !== initialSelection.end
                 ? `${formatTime(currentSelection.start)} - ${formatTime(currentSelection.end)}`
-                : formatTime(passageTime)}{' '}
+                : formatTime(locationMarker)}{' '}
               / {formatTime(passageDuration)}
             </Typography>
           </Stack>
