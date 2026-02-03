@@ -3,11 +3,7 @@ import { useGetGlobal, useGlobal } from '../../context/useGlobal';
 import { useLocation } from 'react-router-dom';
 import { IState, IViewModeStrings } from '../../model';
 import { shallowEqual, useSelector } from 'react-redux';
-import {
-  AppBar,
-  LinearProgress,
-  Box,
-} from '@mui/material';
+import { AppBar, LinearProgress, Box } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { isElectron } from '../../../api-variable';
 import { TokenContext } from '../../context/TokenProvider';
@@ -53,7 +49,6 @@ export const AppHead = (props: IProps) => {
   const orbitStatus = useSelector((state: IState) => state.orbit.status);
   const orbitErrorMsg = useSelector((state: IState) => state.orbit.message);
   const { pathname } = useLocation();
-  const { prjId, pasId } = useParams();
   const navigate = useMyNavigate();
   const { isMobileView, isMobileWidth } = useMobile();
   const [home] = useGlobal('home'); //verified this is not used in a function 2/18/25

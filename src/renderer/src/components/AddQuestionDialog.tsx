@@ -23,6 +23,7 @@ import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import StopIcon from '@mui/icons-material/Stop';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { PassageDetailContext } from '../context/PassageDetailContext';
 import { formatTime } from '../control/formatTime';
 import { useWavRecorder } from '../crud/useWavRecorder';
@@ -235,6 +236,20 @@ export const AddQuestionDialog = ({
     }
   };
 
+  const handleClearAudio = () => {
+    if (questionWsRef.current) {
+      questionWsRef.current.destroy();
+      questionWsRef.current = null;
+    }
+    if (questionAudioUrl) {
+      URL.revokeObjectURL(questionAudioUrl);
+    }
+    setQuestionAudioUrl(null);
+    setQuestionTime(0);
+    setQuestionDuration(0);
+    setAudioChanged(true);
+  };
+
   // Initialize Question WaveSurfer when audio URL changes
   useEffect(() => {
     if (!questionContainerRef.current || !questionAudioUrl) return;
@@ -405,7 +420,7 @@ export const AddQuestionDialog = ({
         </Typography>
 
         {/* Passage Waveform Section */}
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 6 }}>
           <Stack
             direction="row"
             alignItems="center"
@@ -438,7 +453,7 @@ export const AddQuestionDialog = ({
         </Box>
 
         {/* Question Audio Section */}
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 1.5 }}>
           <Stack
             direction="row"
             alignItems="center"
@@ -514,22 +529,34 @@ export const AddQuestionDialog = ({
 
         {/* Speaker and Recording */}
         <Box>
-          <TextField
-            placeholder="Speaker"
-            variant="outlined"
-            size="small"
-            value={speaker}
-            onChange={(e) => setSpeaker(e.target.value)}
-            sx={{
-              width: 250,
-              mb: 4,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 0,
-                border: '1px solid black',
-                '& fieldset': { border: 'none' },
-              },
-            }}
-          />
+          <Stack direction={'row'} justifyContent={'space-between'}>
+            <TextField
+              placeholder="Speaker"
+              variant="outlined"
+              size="small"
+              value={speaker}
+              onChange={(e) => setSpeaker(e.target.value)}
+              sx={{
+                width: 250,
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 0,
+                  border: '1px solid black',
+                  '& fieldset': { border: 'none' },
+                },
+              }}
+            />
+            {questionAudioUrl && (
+              <Box>
+                <IconButton
+                  onClick={handleClearAudio}
+                  sx={{ color: 'neutral.main' }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            )}
+          </Stack>
 
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 5 }}>
             <IconButton
