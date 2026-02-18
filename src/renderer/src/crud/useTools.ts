@@ -19,6 +19,7 @@ const toolSlugs = [
   ToolSlug.WholeBackTranslate,
   ToolSlug.Paratext,
   ToolSlug.ConsultantCheck,
+  ToolSlug.NewPage,
   ToolSlug.Export,
   ToolSlug.Done,
 ];
@@ -33,8 +34,14 @@ export const useTools = () => {
   const t: IToolStrings = useSelector(stringSelector, shallowEqual);
   const [fromLocal] = useState<ISwitches>({});
 
+  const hardcodedToolLabels: ISwitches = {
+    [ToolSlug.NewPage]: 'New Page',
+  };
+
   const localizedTool = (val: string) => {
-    return addPt((t as ISwitches)[val] ?? '') || val;
+    return (
+      addPt((t as ISwitches)[val] ?? '') || hardcodedToolLabels[val] || val
+    );
   };
 
   const fromLocalizedTool = (val: string) => {

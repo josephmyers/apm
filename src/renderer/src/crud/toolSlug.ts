@@ -13,4 +13,5 @@ export enum ToolSlug {
   Community = 'community',
   Export = 'export',
   Done = 'done',
+  NewPage = 'newPage',
 }

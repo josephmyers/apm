@@ -14,7 +14,7 @@ Verify that agent changes work in the running app using MCP tools.
 - `mcp_electron-dev_fill_input`: Fills input by label/placeholder
 - `mcp_electron-dev_drag_element`: Drags element by x/y offsets
 - `mcp_electron-dev_reload_app`: Reloads current page
-- `mcp_electron-dev_take_screenshot`: Take screenshot of app
+- `mcp_electron-dev_take_screenshot`: Take screenshot of app, supplying the save file path (use repo root)
 
 ## Testing Process
 
