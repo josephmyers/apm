@@ -411,8 +411,19 @@ export function ipcMethods(): void {
       });
       return;
     } catch (error) {
-      console.error(error);
       return JSON.stringify(error);
     }
   });
+
+  ipcMain.handle(
+    'saveQuestionAudio',
+    async (_event, passageId: string, audioBuffer: ArrayBuffer) => {
+      const audioDir = (await app.getPath('userData')) + '/question-audio';
+      await fs.ensureDir(audioDir);
+      const filename = `${passageId}_${Date.now()}.wav`;
+      const filePath = (audioDir + '/' + filename).replace(/\\/g, '/');
+      await fs.writeFile(filePath, Buffer.from(audioBuffer));
+      return filePath;
+    }
+  );
 }

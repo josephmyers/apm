@@ -1036,6 +1036,31 @@ if (requestedSchema > 9 && schemaDefinition.models) {
   schemaDefinition.version = 10;
 }
 
+if (requestedSchema > 10 && schemaDefinition.models) {
+  schemaDefinition.models.passagequestion = {
+    keys: { remoteId: {} },
+    attributes: {
+      title: { type: 'string' },
+      speaker: { type: 'string' },
+      segmentStart: { type: 'number' },
+      segmentEnd: { type: 'number' },
+      audioPath: { type: 'string' },
+      duration: { type: 'number' },
+      sequencenum: { type: 'number' },
+      dateCreated: { type: 'string' }, // datetime
+      dateUpdated: { type: 'string' }, // datetime
+      lastModifiedBy: { type: 'number' },
+    },
+    relationships: {
+      passage: { kind: 'hasOne', type: 'passage' },
+      mediafile: { kind: 'hasOne', type: 'mediafile' },
+      lastModifiedByUser: { kind: 'hasOne', type: 'user' },
+    },
+  };
+
+  schemaDefinition.version = 12;
+}
+
 export const schema = new RecordSchema(schemaDefinition);
 
 export const keyMap = new RecordKeyMap();

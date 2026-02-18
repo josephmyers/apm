@@ -7,7 +7,15 @@ import React, {
 } from 'react';
 import { useGlobal } from '../context/useGlobal';
 import { useLocation, useParams } from 'react-router-dom';
-import { Grid, debounce, Paper, Box, SxProps, Stack } from '@mui/material';
+import {
+  Grid,
+  debounce,
+  Paper,
+  Box,
+  SxProps,
+  Stack,
+  Button,
+} from '@mui/material';
 
 import AppHead from '../components/App/AppHead';
 import { HeadHeight } from '../App';
@@ -47,6 +55,7 @@ import PassageDetailParatextIntegration from '../components/PassageDetail/Passag
 import { PassageDetailDiscuss } from '../components/PassageDetail/PassageDetailDiscuss';
 import { addPt } from '../utils/addPt';
 import DiscussionPanel from '../components/Discussions/DiscussionPanel';
+import { useMyNavigate } from '../utils/useMyNavigate';
 
 const KeyTerms = React.lazy(
   () => import('../components/PassageDetail/Keyterms/KeyTerms')
@@ -59,6 +68,8 @@ const PassageDetailGrids = () => {
   const [plan] = useGlobal('plan'); //will be constant here
   const [width, setWidth] = useState(window.innerWidth);
   const widthRef = React.useRef(window.innerWidth);
+  const { prjId, pasId } = useParams();
+  const navigate = useMyNavigate();
 
   const [memory] = useGlobal('memory');
   const ctx = useContext(PassageDetailContext);
@@ -417,6 +428,22 @@ const PassageDetailGrids = () => {
                   sectionArr={sectionArr}
                 />
               )}
+            </Grid>
+          </Grid>
+        )}
+
+        {tool === ToolSlug.NewPage && (
+          <Grid container sx={{ minWidth: 0 }}>
+            <Grid size={{ xs: 12 }} sx={{ minWidth: 0 }}>
+              <PassageDetailChooser width={width - 16} />
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate(`/newpage/${prjId}/${pasId}`)}
+                >
+                  Open Q&A Prep
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         )}
